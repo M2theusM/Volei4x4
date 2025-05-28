@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='90%' style='font-size:90px;text-anchor:middle;'>🏐</text></svg>" type="image/svg+xml">
+  <title>Vôlei 4x4</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 p-4 min-h-screen flex flex-col items-center">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6 flex items-center justify-center relative w-full max-w-md">
+    Controle de partidas 
+    <button class="settings-icon" onclick="abrirConfiguracoes()">⚙️</button>
+  </h1>
+
+  <div id="modalConfig" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="modal-content bg-white p-8 rounded-xl shadow-2xl relative w-11/12 max-w-md mx-auto">
+      <div class="modal-header flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Configurações</h2>
+        <button class="close-modal text-gray-500 hover:text-gray-800 transition-colors" onclick="fecharConfiguracoes()">&times;</button>
+      </div>
+      <div class="config-group mb-5">
+        <label for="pontosPartida" class="block mb-2 font-medium text-gray-700">🏆 Pontos para vencer a partida:</label>
+        <input type="number" id="pontosPartida" min="1" value="15" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <div class="info-text text-sm text-gray-600 mt-1">Pontuação padrão para ganhar o set</div>
+      </div>
+      <div class="config-group mb-5">
+        <label for="tipoDesempate" class="block mb-2 font-medium text-gray-700">👊 Tipo de desempate:</label>
+        <select id="tipoDesempate" class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500">
+          <option value="diferenca">Diferença de 2 pontos</option>
+          <option value="adicional">Vai a 3 direto </option>
+          <option value="saiOsDois">Se empatar sai os 2</option>
+        </select>
+		<div class="info-text text-sm text-gray-600 mt-1">Diferença de 2 pontos: Ganha o time que fizer 2 pontos de diferença.</div>
+		<div class="info-text text-sm text-gray-600 mt-1">Vai a 3 direto: Ganha o time que fizer 3 pontos primeiro.</div>
+		<div class="info-text text-sm text-gray-600 mt-1">Se empatar sai os 2: Ambos os times saem e novos 2 times são formados.</div>
+      </div>
+      <div class="config-group mb-5">
+        <label for="estrelasPorTime" class="block mb-2 font-medium text-gray-700">⭐ Estrelas por time:</label>
+        <input type="number" id="estrelasPorTime" min="0" value="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <div class="info-text text-sm text-gray-600 mt-1">Quantidade de jogadores 'Estrela' por time.</div>
+      </div>
+      <div class="config-group mb-6">
+        <label for="jogadoresPorTime" class="block mb-2 font-medium text-gray-700">🏐 Jogadores por time (total):</label>
+        <input type="number" id="jogadoresPorTime" min="2" max="6" value="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <div class="info-text text-sm text-gray-600 mt-1">Quantidade total de jogadores em cada time (incluindo estrelas).</div>
+      </div>
+      <button onclick="salvarConfiguracoes()" class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Salvar</button>
+    </div>
+  </div>
+
+  <div class="container flex flex-col gap-5 max-w-xl w-full mx-auto">
+    <div class="quadra bg-white p-6 rounded-xl shadow-lg">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Em Quadra</h2>
+      <div class="placar flex justify-around items-center py-5 bg-gray-50 rounded-lg shadow-inner mb-4">
+        <div class="placar-time text-center">
+          <div class="placar-time-nome text-lg text-gray-700 mb-1">TIME A</div>
+          <div class="placar-pontos text-5xl font-extrabold text-blue-600" id="placarA">0</div>
+        </div>
+        <div class="placar-time text-center">
+          <div class="placar-time-nome text-lg text-gray-700 mb-1">TIME B</div>
+          <div class="placar-pontos text-5xl font-extrabold text-blue-600" id="placarB">0</div>
+        </div>
+      </div>
+      <div id="statusPartida" class="status-info text-center text-sm text-gray-600 mt-2 p-2 bg-yellow-100 rounded-md hidden"></div>
+      <div class="flex justify-center gap-6 mt-4">
+        <div class="flex gap-3">
+		<button onclick="adicionarPontoAvulso('A')" title="Ponto por erro para Time A" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1 ponto (Time A)</button>
+          <button onclick="removerPontoAvulso('A')" title="Remover ponto avulso Time A" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1 ponto (Time A)</button>
+        </div>
+        <div class="border-l-2 border-gray-300 h-10"></div> <div class="flex gap-3">
+          <button onclick="adicionarPontoAvulso('B')" title="Ponto por erro para Time B" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1 ponto (Time B)</button>
+          <button onclick="removerPontoAvulso('B')" title="Remover ponto avulso Time B" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1 ponto (Time B)</button>
+        </div>
+		</div>
+		<div class="vitorias-container text-center text-sm text-gray-600 mb-2">*Marcação de pontos por erro*</div>
+      <div class="times flex justify-between gap-4 mt-6">
+        <div class="time w-1/2 bg-green-50 p-4 rounded-lg shadow-inner">
+          <h3 class="text-xl font-semibold text-green-800 mb-2 text-center">Time A</h3>
+          <div class="vitorias-container text-center text-sm text-gray-600 mb-2">Vitórias: <span id="vitoriasA">0</span></div>
+          <ul id="timeA" class="space-y-2"></ul>
+        </div>
+        <div class="time w-1/2 bg-blue-50 p-4 rounded-lg shadow-inner">
+          <h3 class="text-xl font-semibold text-blue-800 mb-2 text-center">Time B</h3>
+          <div class="vitorias-container text-center text-sm text-gray-600 mb-2">Vitórias: <span id="vitoriasB">0</span></div>
+          <ul id="timeB" class="space-y-2"></ul>
+        </div>
+      </div>
+      <div class="botoes flex flex-wrap justify-center gap-3 mt-6">
+        <button onclick="registrarVitoria('A')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time A Venceu</button>
+        <button onclick="resetarPlacar()" class="flex-1 min-w-[140px] px-5 py-3 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Resetar Placar</button>
+		<button onclick="registrarVitoria('B')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time B Venceu</button>
+      </div>
+    </div>
+
+    <div class="fila-geral bg-white p-6 rounded-xl shadow-lg">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila 1</h2>
+      <div class="fila-group flex flex-wrap gap-3 mb-4">
+        <input type="text" id="novoNomeGeral" placeholder="Nome do participante" class="flex-1 min-w-[150px] p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <select id="posicaoGeral" class="p-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500">
+          <option value="fim">Fim da Fila</option>
+          <option value="inicio">Início da Fila</option>
+        </select>
+        <button onclick="adicionarParticipante('geral')" class="px-5 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">+</button>
+      </div>
+      <ul id="filaGeral" class="space-y-2"></ul>
+    </div>
+
+    <div class="fila-estrela bg-white p-6 rounded-xl shadow-lg">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila 2</h2>
+      <div class="fila-group flex flex-wrap gap-3 mb-4">
+        <input type="text" id="novoNomeEstrela" placeholder="Nome do participante" class="flex-1 min-w-[150px] p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <select id="posicaoEstrela" class="p-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500">
+          <option value="fim">Fim da Fila</option>
+          <option value="inicio">Início da Fila</option>
+        </select>
+        <button onclick="adicionarParticipante('estrela')" class="px-5 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">+</button>
+      </div>
+      <ul id="filaEstrela" class="space-y-2"></ul>
+    </div>
+
+    <div class="ranking bg-white p-6 rounded-xl shadow-lg">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Ranking de Pontuadores</h2>
+      <ul id="ranking" class="space-y-2"></ul>
+    </div>
+
+    <button onclick="mostrarHistorico()" class="mt-5 w-full px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75">Ver Histórico de Partidas</button>
+
+    <div id="modalHistorico" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content bg-white p-8 rounded-xl shadow-2xl relative w-11/12 max-w-lg mx-auto">
+            <span onclick="fecharHistorico()" class="close-button absolute top-4 right-6 text-gray-500 text-4xl font-bold cursor-pointer hover:text-gray-800 transition-colors duration-200">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Histórico de Partidas</h2>
+            <ul id="listaHistorico" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                </ul>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+  <script src="scripts.js"></script>
+</body>
+</html>
