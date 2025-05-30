@@ -17,8 +17,8 @@ let placarB = 0;
 let jogadoresStats = {}; // { "NomeDoJogador": { pontos: 0, vitorias: 0, derrotas: 0 } }
 let jogadoresTravados = {}; // { "NomeDoJogador": true/false }
 
-let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 15;
-let tipoDesempate = localStorage.getItem('tipoDesempate') || 'diferenca';
+let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
+let tipoDesempate = localStorage.getItem('tipoDesempate') || 'diferencaMinima';
 let estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1; // Nova variável de configuração
 let jogadoresPorTime = parseInt(localStorage.getItem('jogadoresPorTime')) || 4; // Nova variável de configuração
 
@@ -27,8 +27,8 @@ let historicoPartidas = [];
 
 // Função para carregar as configurações iniciais
 function carregarDadosIniciais() {
-    pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 15;
-    tipoDesempate = localStorage.getItem('tipoDesempate') || 'diferenca';
+    pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
+    tipoDesempate = localStorage.getItem('tipoDesempate') || 'diferencaMinima';
     estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1;
     jogadoresPorTime = parseInt(localStorage.getItem('jogadoresPorTime')) || 4;
 }
