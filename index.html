@@ -40,9 +40,8 @@
 		<div class="info-text text-sm text-gray-600 mt-1">Se empatar sai os 2: Ambos os times saem e novos 2 times são formados.</div>
       </div>
       <div class="config-group mb-5">
-        <label for="estrelasPorTime" class="block mb-2 font-medium text-gray-700">⭐ Mínimo de estrelas por time:</label>
-        <input type="number" id="estrelasPorTime" min="0" value="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-        <div class="info-text text-sm text-gray-600 mt-1">Quantidade mínima de jogadores 'Estrela' por time. É possível adicionar mais manualmente.</div>
+        <label for="estrelasPorTime" class="block mb-2 font-medium text-gray-700">⭐ Mínimo de jogador com estrela por time:</label>
+        <input type="number" id="estrelasPorTime" min="0" value="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />        
       </div>
       <div class="config-group mb-5">
         <label for="jogadoresPorTime" class="block mb-2 font-medium text-gray-700">🏐 Jogadores por time (total):</label>
@@ -102,7 +101,7 @@
     </div>
 
     <div class="fila-geral bg-white p-6 rounded-xl shadow-lg">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila 1</h2>
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila Geral</h2>
       <div class="fila-group flex flex-wrap gap-3 mb-4">
         <input type="text" id="novoNomeGeral" placeholder="Nome do participante" class="flex-1 min-w-[150px] p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
         <select id="posicaoGeral" class="p-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500">
@@ -115,7 +114,7 @@
     </div>
 
     <div class="fila-estrela bg-white p-6 rounded-xl shadow-lg">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila 2</h2>
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila com Estrela</h2>
       <div class="fila-group flex flex-wrap gap-3 mb-4">
         <input type="text" id="novoNomeEstrela" placeholder="Nome do participante" class="flex-1 min-w-[150px] p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
         <select id="posicaoEstrela" class="p-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500">
