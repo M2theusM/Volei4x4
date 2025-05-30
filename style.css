@@ -81,25 +81,25 @@ body {
 .historico-meta-info {
     font-size: 0.9em;
     color: #777;
-    text-align: center; /* Centralizado como no emulador */
+    text-align: center;
 }
 
 /* Estilos para o cadeado */
 .lock-icon {
     cursor: pointer;
     margin-left: 10px;
-    margin-right: 8px; /* Adicionado para criar espaço à direita */
+    margin-right: 8px;
     font-size: 1.1em;
-    color: #28a745; /* Cor verde para cadeado aberto (desbloqueado) */
+    color: #28a745; /* Verde para desbloqueado */
 }
 
 .locked .lock-icon {
-    color: #dc3545; /* Cor vermelha para cadeado fechado (bloqueado) */
+    color: #dc3545; /* Vermelho para bloqueado */
 }
 
 .locked input[type="text"] {
     background-color: #f0f0f0;
-    pointer-events: none; /* Impede a edição do nome quando travado */
+    /* pointer-events: none;  Removido para permitir edição mesmo travado, se necessário no futuro, mas o input já está disabled */
 }
 
 .drag-handle {
