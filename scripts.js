@@ -1,4 +1,4 @@
-// Previne o zoom no IOS
+// Previne o zoom no iOS
 document.addEventListener('touchstart', function(event) {
   if (event.touches.length > 1) {
     event.preventDefault();
@@ -19,9 +19,9 @@ let jogadoresTravados = {}; // { "NomeDoJogador": true/false }
 
 let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
 let tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
-let estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1;
+let estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1; // Agora representa o MÍNIMO
 let jogadoresPorTime = parseInt(localStorage.getItem('jogadoresPorTime')) || 4;
-let maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 3; // Nova configuração
+let maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 3;
 
 // O histórico de partidas não será persistido entre recarregamentos
 let historicoPartidas = [];
@@ -32,22 +32,20 @@ function carregarDadosIniciais() {
     tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
     estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1;
     jogadoresPorTime = parseInt(localStorage.getItem('jogadoresPorTime')) || 4;
-    maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 3; // Carrega a nova configuração
+    maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 3;
 }
 
 // Função para salvar as configurações
 function salvarConfiguracoes() {
     const novosPontosVitoria = parseInt(document.getElementById('pontosPartida').value);
     const novoTipoDesempate = document.getElementById('tipoDesempate').value;
-    const novasEstrelasPorTime = parseInt(document.getElementById('estrelasPorTime').value);
+    const novasEstrelasPorTime = parseInt(document.getElementById('estrelasPorTime').value); // Mínimo de estrelas
     const novosJogadoresPorTime = parseInt(document.getElementById('jogadoresPorTime').value);
-    const novoMaxVitoriasConsecutivas = parseInt(document.getElementById('maxVitoriasConsecutivas').value); // Lê o novo valor
+    const novoMaxVitoriasConsecutivas = parseInt(document.getElementById('maxVitoriasConsecutivas').value);
 
-    // Validação das novas configurações
     if (novosPontosVitoria > 0 && novasEstrelasPorTime >= 0 && novosJogadoresPorTime >= 2 && novosJogadoresPorTime <= 6 && novoMaxVitoriasConsecutivas > 0) {
-        // Verifica se o número de estrelas excede o total de jogadores por time
         if (novasEstrelasPorTime > novosJogadoresPorTime) {
-            alert("O número de estrelas por time não pode ser maior que o total de jogadores por time.");
+            alert("O número mínimo de estrelas por time não pode ser maior que o total de jogadores por time.");
             return;
         }
 
@@ -55,18 +53,18 @@ function salvarConfiguracoes() {
         tipoDesempate = novoTipoDesempate;
         estrelasPorTime = novasEstrelasPorTime;
         jogadoresPorTime = novosJogadoresPorTime;
-        maxVitoriasConsecutivas = novoMaxVitoriasConsecutivas; // Salva o novo valor
+        maxVitoriasConsecutivas = novoMaxVitoriasConsecutivas;
 
         localStorage.setItem('pontosVitoria', pontosVitoria);
         localStorage.setItem('tipoDesempate', tipoDesempate);
         localStorage.setItem('estrelasPorTime', estrelasPorTime);
         localStorage.setItem('jogadoresPorTime', jogadoresPorTime);
-        localStorage.setItem('maxVitoriasConsecutivas', maxVitoriasConsecutivas); // Salva no localStorage
+        localStorage.setItem('maxVitoriasConsecutivas', maxVitoriasConsecutivas);
 
         fecharConfiguracoes();
         atualizarTela();
     } else {
-        alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: maior que 0.");
+        alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Mín. estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: maior que 0.");
     }
 }
 
@@ -75,7 +73,7 @@ function abrirConfiguracoes() {
     document.getElementById('tipoDesempate').value = tipoDesempate;
     document.getElementById('estrelasPorTime').value = estrelasPorTime;
     document.getElementById('jogadoresPorTime').value = jogadoresPorTime;
-    document.getElementById('maxVitoriasConsecutivas').value = maxVitoriasConsecutivas; // Preenche o campo
+    document.getElementById('maxVitoriasConsecutivas').value = maxVitoriasConsecutivas;
     document.getElementById('modalConfig').classList.remove('hidden');
 }
 
@@ -83,7 +81,6 @@ function fecharConfiguracoes() {
     document.getElementById('modalConfig').classList.add('hidden');
 }
 
-// Função auxiliar para embaralhar um array
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -98,15 +95,13 @@ function iniciarNovoJogo() {
     vitoriasB = 0;
     placarA = 0;
     placarB = 0;
-    jogadoresStats = {}; // Reinicia o ranking de jogadores
-    jogadoresTravados = {}; // Reinicia o estado dos cadeados
+    jogadoresStats = {};
+    jogadoresTravados = {};
 
-    // Reinicia as filas com os jogadores iniciais
     filaGeral = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4", "Jogador 5", "Jogador 6"];
     filaEstrela = ["Jogador A", "Jogador B"];
-    estrelasRegistradas = [...filaEstrela]; // Popula as estrelas registradas a partir da fila estrela inicial
+    estrelasRegistradas = [...filaEstrela];
 
-    // Garante que os jogadores iniciais estejam no jogadoresStats e destravados
     [...filaGeral, ...filaEstrela].forEach(nome => {
         if (!jogadoresStats[nome]) {
             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
@@ -114,22 +109,27 @@ function iniciarNovoJogo() {
         jogadoresTravados[nome] = false;
     });
 
-    // Filtra jogadores travados antes de formar os times
     const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
     const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
 
-    const jogadoresGeraisPorTime = jogadoresPorTime - estrelasPorTime;
+    // Na formação automática, estrelasPorTime ainda define a quantidade a ser colocada inicialmente.
+    // Se estrelasPorTime for 0, nenhum jogador da fila estrela será priorizado automaticamente.
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime); // Garante que não seja negativo
+    const jogadoresGeraisPorTime = jogadoresPorTime - estrelasParaAlocar;
 
-    // Verifica se há jogadores suficientes para formar os times com as configurações atuais
-    if (filaEstrelaDisponivel.length < (estrelasPorTime * 2) || filaGeralDisponivel.length < (jogadoresGeraisPorTime * 2)) {
-        alert(`É necessário ter pelo menos ${estrelasPorTime * 2} jogadores estrela e ${jogadoresGeraisPorTime * 2} jogadores na fila geral disponíveis (não travados) para iniciar um jogo com ${jogadoresPorTime} jogadores por time.`);
-        // Se não houver jogadores suficientes, não forma os times e apenas atualiza a tela
+    if (jogadoresGeraisPorTime < 0) {
+        alert(`Configuração inválida: O número de jogadores por time (${jogadoresPorTime}) é menor que o mínimo de estrelas por time (${estrelasParaAlocar}). Ajuste nas configurações.`);
         atualizarTela();
         return;
     }
 
-    // Forma os times com jogadores das filas disponíveis
-    for (let i = 0; i < estrelasPorTime; i++) {
+    if (filaEstrelaDisponivel.length < (estrelasParaAlocar * 2) || filaGeralDisponivel.length < (jogadoresGeraisPorTime * 2)) {
+        alert(`É necessário ter pelo menos ${estrelasParaAlocar * 2} jogadores estrela e ${jogadoresGeraisPorTime * 2} jogadores na fila geral disponíveis para iniciar um jogo com ${jogadoresPorTime} jogadores por time (sendo ${estrelasParaAlocar} estrelas no mínimo).`);
+        atualizarTela();
+        return;
+    }
+
+    for (let i = 0; i < estrelasParaAlocar; i++) {
         timeA.push(filaEstrelaDisponivel.shift());
         timeB.push(filaEstrelaDisponivel.shift());
     }
@@ -139,7 +139,6 @@ function iniciarNovoJogo() {
         timeB.push(filaGeralDisponivel.shift());
     }
 
-    // Remove os jogadores selecionados das filas originais
     filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
     filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
 
@@ -173,46 +172,43 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
 
     jogadorParaEntrar = filaOrigemArray[indexFila];
 
-    // Impedir troca se o jogador que vai entrar estiver travado
     if (jogadoresTravados[jogadorParaEntrar]) {
         alert("Este jogador está travado e não pode entrar em quadra.");
-        atualizarTela(); // Para resetar o select
+        atualizarTela();
         return;
     }
 
     let jogadorParaSair;
+    const equipeAlvo = time === 'A' ? timeA : timeB;
+    jogadorParaSair = equipeAlvo[indexQuadra];
 
-    const isEstrelaSaindo = estrelasRegistradas.includes(time === 'A' ? timeA[indexQuadra] : timeB[indexQuadra]);
+    const isEstrelaSaindo = estrelasRegistradas.includes(jogadorParaSair);
     const isEstrelaEntrando = estrelasRegistradas.includes(jogadorParaEntrar);
+    let estrelasNoTimeAtual = equipeAlvo.filter(j => estrelasRegistradas.includes(j)).length;
 
-    // Lógica de validação para manter o número correto de estrelas por time
-    if (isEstrelaSaindo && !isEstrelaEntrando) { // Uma estrela está saindo e um jogador geral está entrando
-        let estrelasNoTimeAtual = (time === 'A' ? timeA : timeB).filter(j => estrelasRegistradas.includes(j)).length;
-        if (estrelasNoTimeAtual - 1 < estrelasPorTime) { // Se remover a estrela, o número de estrelas será menor que o configurado
-            alert(`Não é permitido trocar uma estrela por um jogador comum se isso resultar em menos de ${estrelasPorTime} estrela(s) no time. A troca deve ser entre estrelas ou um jogador geral entrando para substituir um jogador geral.`);
-            atualizarTela(); // Para resetar o select
-            return;
-        }
-    } else if (!isEstrelaSaindo && isEstrelaEntrando) { // Um jogador geral está saindo e uma estrela está entrando
-        let estrelasNoTimeAtual = (time === 'A' ? timeA : timeB).filter(j => estrelasRegistradas.includes(j)).length;
-        if (estrelasNoTimeAtual + 1 > estrelasPorTime) { // Se adicionar a estrela, o número de estrelas será maior que o configurado
-            alert(`Não é permitido adicionar mais de ${estrelasPorTime} estrela(s) por time.`);
-            atualizarTela(); // Para resetar o select
+    // Se uma estrela está saindo e um jogador comum está entrando
+    if (isEstrelaSaindo && !isEstrelaEntrando) {
+        // Verifica se a remoção da estrela fará com que o time fique abaixo do mínimo configurado
+        if (estrelasNoTimeAtual - 1 < estrelasPorTime) {
+            alert(`Não é permitido ter menos de ${estrelasPorTime} estrela(s) no time. Esta troca resultaria em ${estrelasNoTimeAtual - 1} estrela(s).`);
+            atualizarTela();
             return;
         }
     }
+    // Se um jogador comum está saindo e uma estrela está entrando,
+    // o número de estrelas no time aumentará. Isso é permitido, pois 'estrelasPorTime' é um MÍNIMO.
+    // Não há mais restrição para o número máximo de estrelas (além do total de jogadores no time).
 
-
+    // Efetua a troca
     if (time === 'A') {
-        jogadorParaSair = timeA[indexQuadra];
         timeA[indexQuadra] = jogadorParaEntrar;
     } else {
-        jogadorParaSair = timeB[indexQuadra];
         timeB[indexQuadra] = jogadorParaEntrar;
     }
 
-    filaOrigemArray.splice(indexFila, 1);
+    filaOrigemArray.splice(indexFila, 1); // Remove o jogador que entrou da sua fila de origem
 
+    // Adiciona o jogador que saiu de volta à sua fila apropriada
     if (estrelasRegistradas.includes(jogadorParaSair)) {
         filaEstrela.push(jogadorParaSair);
     } else {
@@ -225,27 +221,21 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
 function verificarVitoriaPartida() {
     const minPontos = pontosVitoria;
 
-    // Se o tipo de desempate for 'saiOsDois' e ambos os times estão em (minPontos - 1),
-    // a partida termina com 'ambosSaem' imediatamente.
     if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
         return 'ambosSaem';
     }
 
-    // As verificações para "diferença de 2 pontos" e "vai a 3 direto"
-    // só devem ocorrer se a condição de "ambos saem" não foi atendida.
     if (placarA >= minPontos - 1 && placarB >= minPontos - 1) {
         if (tipoDesempate === 'diferenca') {
             const diferencaMinima = 2;
             if (placarA >= placarB + diferencaMinima) return 'A';
             if (placarB >= placarA + diferencaMinima) return 'B';
         } else if (tipoDesempate === 'adicional') {
-            // No modo "vai a 3 direto", o jogo vai até minPontos + 2 (ex: 12 + 2 = 14)
             if (placarA >= minPontos + 2) return 'A';
             if (placarB >= minPontos + 2) return 'B';
         }
     }
 
-    // Verificação padrão de vitória se nenhum dos desempates se aplica ainda
     if (placarA >= minPontos) return 'A';
     if (placarB >= minPontos) return 'B';
 
@@ -269,7 +259,6 @@ function marcarPonto(time, jogador) {
 }
 
 function registrarVitoria(vencedor) {
-    // Atualiza as vitórias e derrotas dos jogadores no ranking geral
     if (vencedor === 'A') {
         vitoriasA++;
         vitoriasB = 0;
@@ -295,11 +284,10 @@ function registrarVitoria(vencedor) {
     } else if (vencedor === 'ambosSaem') {
         [...timeA, ...timeB].forEach(jogador => {
             if (!jogadoresStats[jogador]) jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
-            jogadoresStats[jogador].derrotas++; // Ambos os times "perdem" no sentido de sair
+            jogadoresStats[jogador].derrotas++;
         });
     }
 
-    // Adiciona a partida ao histórico antes de resetar os placares
     historicoPartidas.unshift({
         timeA: [...timeA],
         timeB: [...timeB],
@@ -309,9 +297,8 @@ function registrarVitoria(vencedor) {
         data: new Date().toLocaleString('pt-BR')
     });
 
-    // Lógica de rotação de jogadores e reset de placar
     let jogadoresParaFila = [];
-    if (vencedor === 'ambosSaem' || vitoriasA >= maxVitoriasConsecutivas || vitoriasB >= maxVitoriasConsecutivas) { // Usa a nova variável
+    if (vencedor === 'ambosSaem' || vitoriasA >= maxVitoriasConsecutivas || vitoriasB >= maxVitoriasConsecutivas) {
         jogadoresParaFila = [...timeA, ...timeB];
         timeA = [];
         timeB = [];
@@ -338,42 +325,52 @@ function registrarVitoria(vencedor) {
 
     const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
     const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
-    const jogadoresGeraisPorTime = jogadoresPorTime - estrelasPorTime;
+    
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime);
+    const jogadoresGeraisPorTimeCalc = jogadoresPorTime - estrelasParaAlocar;
 
+    if (jogadoresGeraisPorTimeCalc < 0 && (timeA.length === 0 || timeB.length === 0)) {
+        alert(`Configuração inválida para formar novo(s) time(s): O número de jogadores por time (${jogadoresPorTime}) é menor que o mínimo de estrelas por time (${estrelasParaAlocar}). Ajuste nas configurações.`);
+        placarA = 0;
+        placarB = 0;
+        atualizarTela();
+        return;
+    }
+    
     if (timeA.length === 0 && timeB.length === 0) {
-        if (filaEstrelaDisponivel.length >= (estrelasPorTime * 2) && filaGeralDisponivel.length >= (jogadoresGeraisPorTime * 2)) {
-            for (let i = 0; i < estrelasPorTime; i++) {
+        if (filaEstrelaDisponivel.length >= (estrelasParaAlocar * 2) && filaGeralDisponivel.length >= (jogadoresGeraisPorTimeCalc * 2)) {
+            for (let i = 0; i < estrelasParaAlocar; i++) {
                 timeA.push(filaEstrelaDisponivel.shift());
                 timeB.push(filaEstrelaDisponivel.shift());
             }
-            for (let i = 0; i < jogadoresGeraisPorTime; i++) {
+            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
                 timeA.push(filaGeralDisponivel.shift());
                 timeB.push(filaGeralDisponivel.shift());
             }
         } else {
-            alert("Não há jogadores suficientes disponíveis nas filas para formar novos times. Adicione mais jogadores.");
+            alert("Não há jogadores suficientes disponíveis nas filas para formar novos times com o mínimo de estrelas configurado.");
         }
-    } else if (timeB.length === 0) {
-        if (filaEstrelaDisponivel.length >= estrelasPorTime && filaGeralDisponivel.length >= jogadoresGeraisPorTime) {
-            for (let i = 0; i < estrelasPorTime; i++) {
+    } else if (timeB.length === 0) { // Time B saiu, formar novo Time B
+        if (filaEstrelaDisponivel.length >= estrelasParaAlocar && filaGeralDisponivel.length >= jogadoresGeraisPorTimeCalc) {
+            for (let i = 0; i < estrelasParaAlocar; i++) {
                 timeB.push(filaEstrelaDisponivel.shift());
             }
-            for (let i = 0; i < jogadoresGeraisPorTime; i++) {
+            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
                 timeB.push(filaGeralDisponivel.shift());
             }
         } else {
-            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time B. Adicione mais jogadores.");
+            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time B com o mínimo de estrelas configurado.");
         }
-    } else if (timeA.length === 0) {
-        if (filaEstrelaDisponivel.length >= estrelasPorTime && filaGeralDisponivel.length >= jogadoresGeraisPorTime) {
-            for (let i = 0; i < estrelasPorTime; i++) {
+    } else if (timeA.length === 0) { // Time A saiu, formar novo Time A
+        if (filaEstrelaDisponivel.length >= estrelasParaAlocar && filaGeralDisponivel.length >= jogadoresGeraisPorTimeCalc) {
+            for (let i = 0; i < estrelasParaAlocar; i++) {
                 timeA.push(filaEstrelaDisponivel.shift());
             }
-            for (let i = 0; i < jogadoresGeraisPorTime; i++) {
+            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
                 timeA.push(filaGeralDisponivel.shift());
             }
         } else {
-            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time A. Adicione mais jogadores.");
+            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time A com o mínimo de estrelas configurado.");
         }
     }
 
@@ -455,7 +452,7 @@ function editarParticipante(tipoFila, index, novoNome) {
   novoNome = novoNome.trim();
   if (!novoNome) {
     alert("O nome do participante não pode ser vazio.");
-    atualizarTela(); // Reverte para o nome antigo se o novo nome for inválido
+    atualizarTela(); 
     return;
   }
 
@@ -472,12 +469,10 @@ function editarParticipante(tipoFila, index, novoNome) {
 
   nomeAntigo = filaAlvo[index];
 
-  // Se o nome não mudou, não faz nada
   if (nomeAntigo === novoNome) {
     return;
   }
 
-  // Verifica se o novo nome já existe em alguma das filas ou times
   const nomeExistente = filaGeral.includes(novoNome) ||
                          filaEstrela.includes(novoNome) ||
                          timeA.includes(novoNome) ||
@@ -485,15 +480,12 @@ function editarParticipante(tipoFila, index, novoNome) {
 
   if (nomeExistente && nomeAntigo !== novoNome) {
       alert(`O nome "${novoNome}" já está em uso. Por favor, escolha outro nome.`);
-      atualizarTela(); // Reverte para o nome antigo
+      atualizarTela(); 
       return;
   }
 
-
-  // Atualiza o nome na fila
   filaAlvo[index] = novoNome;
 
-  // Atualiza o nome em estrelasRegistradas se for uma estrela
   if (tipoFila === 'estrela') {
     const estrelaIndex = estrelasRegistradas.indexOf(nomeAntigo);
     if (estrelaIndex > -1) {
@@ -501,7 +493,6 @@ function editarParticipante(tipoFila, index, novoNome) {
     }
   }
 
-  // Transfere estatísticas e estado de travamento
   if (jogadoresStats[nomeAntigo]) {
     jogadoresStats[novoNome] = jogadoresStats[nomeAntigo];
     delete jogadoresStats[nomeAntigo];
@@ -516,7 +507,6 @@ function editarParticipante(tipoFila, index, novoNome) {
     jogadoresTravados[novoNome] = false;
   }
 
-  // Atualiza o nome nos times se o jogador estiver em quadra
   timeA = timeA.map(j => j === nomeAntigo ? novoNome : j);
   timeB = timeB.map(j => j === nomeAntigo ? novoNome : j);
 
@@ -579,17 +569,17 @@ function atualizarStatusPartida() {
   if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
       statusText = `🚨 ATENÇÃO: Ambos os times em ${minPontos -1} pontos. Próximo ponto define se alguém vence ou ambos saem!`;
       displayStatus = true;
-  } else if (placarA >= minPontos - 1 && placarB >= minPontos - 1) { // Ambos os times estão em condição de vencer ou em desempate
+  } else if (placarA >= minPontos - 1 && placarB >= minPontos - 1) { 
     if (tipoDesempate === 'diferenca') {
       statusText = `⚡ DESEMPATE: É necessário abrir 2 pontos de diferença para vencer.`;
     } else if (tipoDesempate === 'adicional') {
-      statusText = `⚡ DESEMPATE: Vence quem alcançar ${minPontos + 2} pontos.`; // Ex: 12 + 2 = 14
+      statusText = `⚡ DESEMPATE: Vence quem alcançar ${minPontos + 2} pontos.`;
     }
     displayStatus = true;
-  } else if (placarA >= minPontos -1 ) { // Apenas Time A em match point
+  } else if (placarA >= minPontos -1 ) { 
       statusText = `🔥 Match point para o Time A! (${minPontos - placarA} ponto${minPontos - placarA !== 1 ? 's' : ''} para vencer)`;
       displayStatus = true;
-  } else if (placarB >= minPontos -1) { // Apenas Time B em match point
+  } else if (placarB >= minPontos -1) { 
       statusText = `🔥 Match point para o Time B! (${minPontos - placarB} ponto${minPontos - placarB !== 1 ? 's' : ''} para vencer)`;
       displayStatus = true;
   }
@@ -709,7 +699,7 @@ function setupSortableLists() {
 }
 
 function adicionarPontoAvulso(time) {
-  const nomeAvulso = "Ponto Avulso (Erro)"; // Não será exibido no ranking
+  //const nomeAvulso = "Ponto Avulso (Erro)"; 
   if (time === 'A') placarA++;
   else if (time === 'B') placarB++;
 
@@ -733,8 +723,8 @@ function mostrarHistorico() {
     if (historicoPartidas.length === 0) {
         listaHistorico.innerHTML = '<li class="text-center text-gray-500 py-4">Nenhuma partida registrada ainda.</li>';
     } else {
-        const historicoInvertido = [...historicoPartidas].reverse(); // Mostra mais recentes primeiro
-        historicoInvertido.forEach((partida, index) => { // index original da partida (do mais antigo para o mais novo)
+        const historicoInvertido = [...historicoPartidas].reverse(); 
+        historicoInvertido.forEach((partida) => { 
             const numeroPartidaOriginal = historicoPartidas.length - historicoInvertido.indexOf(partida);
 
             const li = document.createElement('li');
@@ -770,7 +760,7 @@ function mostrarHistorico() {
                     </div>
                 </div>
             `;
-            li.className = backgroundClass + ' p-4 rounded-lg shadow-md mb-3';
+            li.className = backgroundClass + ' p-4 rounded-lg shadow-md mb-3'; // Adicionando classes Tailwind diretamente
             listaHistorico.appendChild(li);
         });
     }
