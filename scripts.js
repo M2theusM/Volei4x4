@@ -1,4 +1,4 @@
-// Previne o zoom no iOS
+// Previne o zoom no IOS
 document.addEventListener('touchstart', function(event) {
   if (event.touches.length > 1) {
     event.preventDefault();
