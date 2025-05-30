@@ -96,8 +96,8 @@ function iniciarNovoJogo() {
     jogadoresTravados = {}; // Reinicia o estado dos cadeados
 
     // Reinicia as filas com os jogadores iniciais
-    filaGeral = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4", "Anderson", "Danilo", "Fernando", "Iba", "Kauan", "Marciano", "Mateus Henrique", "Matheus Matos", "Odair", "Pedro", "Rafael", "Wendel"];
-    filaEstrela = ["Jogador A", "Jogador B", "Jogador C", "Jogador D", "Alan", "Daniele", "Edinho", "Guilherme Basso", "Guilherme Ramires", "Jonatan", "Julio Cesar", "Lucas", "Matheus Venturim", "Pâmela", "Paty", "Rhuana", "Vagner"];
+    filaGeral = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4", "Jogador 5", "Jogador 6"];
+    filaEstrela = ["Jogador A", "Jogador B"];
     estrelasRegistradas = [...filaEstrela]; // Popula as estrelas registradas a partir da fila estrela inicial
 
     // Garante que os jogadores iniciais estejam no jogadoresStats e destravados
