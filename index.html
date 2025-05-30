@@ -13,7 +13,7 @@
 </head>
 <body class="bg-gray-100 p-4 min-h-screen flex flex-col items-center">
   <h1 class="text-3xl font-bold text-gray-800 mb-6 flex items-center justify-center relative w-full max-w-md">
-    Controle de partidas 
+    Controle de partidas
     <button class="settings-icon" onclick="abrirConfiguracoes()">⚙️</button>
   </h1>
 
@@ -26,7 +26,7 @@
       <div class="config-group mb-5">
         <label for="pontosPartida" class="block mb-2 font-medium text-gray-700">🏆 Pontos para vencer a partida:</label>
         <input type="number" id="pontosPartida" min="1" value="15" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-        <div class="info-text text-sm text-gray-600 mt-1">Pontuação padrão para ganhar o set</div>
+        <div class="info-text text-sm text-gray-600 mt-1">Pontuação padrão para ganhar o set.</div>
       </div>
       <div class="config-group mb-5">
         <label for="tipoDesempate" class="block mb-2 font-medium text-gray-700">👊 Tipo de desempate:</label>
@@ -44,10 +44,15 @@
         <input type="number" id="estrelasPorTime" min="0" value="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
         <div class="info-text text-sm text-gray-600 mt-1">Quantidade de jogadores 'Estrela' por time.</div>
       </div>
-      <div class="config-group mb-6">
+      <div class="config-group mb-5">
         <label for="jogadoresPorTime" class="block mb-2 font-medium text-gray-700">🏐 Jogadores por time (total):</label>
         <input type="number" id="jogadoresPorTime" min="2" max="6" value="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
         <div class="info-text text-sm text-gray-600 mt-1">Quantidade total de jogadores em cada time (incluindo estrelas).</div>
+      </div>
+      <div class="config-group mb-6">
+        <label for="maxVitoriasConsecutivas" class="block mb-2 font-medium text-gray-700">🔁 Máximo de vitórias consecutivas:</label>
+        <input type="number" id="maxVitoriasConsecutivas" min="1" value="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <div class="info-text text-sm text-gray-600 mt-1">Número de vitórias seguidas para um time ser desfeito.</div>
       </div>
       <button onclick="salvarConfiguracoes()" class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Salvar</button>
     </div>
@@ -76,7 +81,7 @@
           <button onclick="adicionarPontoAvulso('B')" title="Ponto por erro para Time B" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1</button>
           <button onclick="removerPontoAvulso('B')" title="Remover ponto avulso Time B" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1</button>
         </div>
-	</div>		
+	</div>
       <div class="times flex justify-between gap-4 mt-6">
         <div class="time w-1/2 bg-green-50 p-4 rounded-lg shadow-inner">
           <h3 class="text-xl font-semibold text-green-800 mb-2 text-center">Time A</h3>
