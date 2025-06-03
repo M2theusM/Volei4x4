@@ -25,6 +25,56 @@ let maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecut
 
 // O histórico de partidas não será persistido entre recarregamentos
 let historicoPartidas = [];
+let historicoEstados = [];
+const MAX_UNDO_HISTORY = 30;
+
+// Funções para Desfazer Ação
+function salvarEstadoAtual() {
+    const estado = {
+        filaGeral: JSON.parse(JSON.stringify(filaGeral)),
+        filaEstrela: JSON.parse(JSON.stringify(filaEstrela)),
+        estrelasRegistradas: JSON.parse(JSON.stringify(estrelasRegistradas)),
+        timeA: JSON.parse(JSON.stringify(timeA)),
+        timeB: JSON.parse(JSON.stringify(timeB)),
+        vitoriasA: vitoriasA,
+        vitoriasB: vitoriasB,
+        placarA: placarA,
+        placarB: placarB,
+        jogadoresStats: JSON.parse(JSON.stringify(jogadoresStats)),
+        jogadoresTravados: JSON.parse(JSON.stringify(jogadoresTravados)),
+        historicoPartidas: JSON.parse(JSON.stringify(historicoPartidas)),
+    };
+    historicoEstados.push(estado);
+    if (historicoEstados.length > MAX_UNDO_HISTORY) {
+        historicoEstados.shift();
+    }
+}
+
+function restaurarEstado(estado) {
+    filaGeral = estado.filaGeral;
+    filaEstrela = estado.filaEstrela;
+    estrelasRegistradas = estado.estrelasRegistradas;
+    timeA = estado.timeA;
+    timeB = estado.timeB;
+    vitoriasA = estado.vitoriasA;
+    vitoriasB = estado.vitoriasB;
+    placarA = estado.placarA;
+    placarB = estado.placarB;
+    jogadoresStats = estado.jogadoresStats;
+    jogadoresTravados = estado.jogadoresTravados;
+    historicoPartidas = estado.historicoPartidas;
+}
+
+function desfazerUltimaAcao() {
+    if (historicoEstados.length > 0) {
+        const estadoAnterior = historicoEstados.pop();
+        restaurarEstado(estadoAnterior);
+        atualizarTela();
+    } else {
+        alert("Nenhuma ação para desfazer.");
+    }
+}
+
 
 // Função para carregar as configurações iniciais
 function carregarDadosIniciais() {
@@ -89,6 +139,7 @@ function shuffleArray(array) {
 }
 
 function iniciarNovoJogo() {
+    salvarEstadoAtual();
     timeA = [];
     timeB = [];
     vitoriasA = 0;
@@ -112,9 +163,7 @@ function iniciarNovoJogo() {
     const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
     const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
 
-    // Na formação automática, estrelasPorTime ainda define a quantidade a ser colocada inicialmente.
-    // Se estrelasPorTime for 0, nenhum jogador da fila estrela será priorizado automaticamente.
-    const estrelasParaAlocar = Math.max(0, estrelasPorTime); // Garante que não seja negativo
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime); 
     const jogadoresGeraisPorTime = jogadoresPorTime - estrelasParaAlocar;
 
     if (jogadoresGeraisPorTime < 0) {
@@ -146,6 +195,7 @@ function iniciarNovoJogo() {
 }
 
 function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
+    salvarEstadoAtual();
     const indexFila = parseInt(indexFilaString);
 
     if (isNaN(indexFila) || indexFila < 0) {
@@ -186,29 +236,22 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
     const isEstrelaEntrando = estrelasRegistradas.includes(jogadorParaEntrar);
     let estrelasNoTimeAtual = equipeAlvo.filter(j => estrelasRegistradas.includes(j)).length;
 
-    // Se uma estrela está saindo e um jogador comum está entrando
     if (isEstrelaSaindo && !isEstrelaEntrando) {
-        // Verifica se a remoção da estrela fará com que o time fique abaixo do mínimo configurado
         if (estrelasNoTimeAtual - 1 < estrelasPorTime) {
             alert(`Não é permitido ter menos de ${estrelasPorTime} estrela(s) no time. Esta troca resultaria em ${estrelasNoTimeAtual - 1} estrela(s).`);
             atualizarTela();
             return;
         }
     }
-    // Se um jogador comum está saindo e uma estrela está entrando,
-    // o número de estrelas no time aumentará. Isso é permitido, pois 'estrelasPorTime' é um MÍNIMO.
-    // Não há mais restrição para o número máximo de estrelas (além do total de jogadores no time).
-
-    // Efetua a troca
+    
     if (time === 'A') {
         timeA[indexQuadra] = jogadorParaEntrar;
     } else {
         timeB[indexQuadra] = jogadorParaEntrar;
     }
 
-    filaOrigemArray.splice(indexFila, 1); // Remove o jogador que entrou da sua fila de origem
+    filaOrigemArray.splice(indexFila, 1);
 
-    // Adiciona o jogador que saiu de volta à sua fila apropriada
     if (estrelasRegistradas.includes(jogadorParaSair)) {
         filaEstrela.push(jogadorParaSair);
     } else {
@@ -243,6 +286,7 @@ function verificarVitoriaPartida() {
 }
 
 function marcarPonto(time, jogador) {
+    salvarEstadoAtual();
     if (!jogadoresStats[jogador]) {
         jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
     }
@@ -259,6 +303,7 @@ function marcarPonto(time, jogador) {
 }
 
 function registrarVitoria(vencedor) {
+    salvarEstadoAtual();
     if (vencedor === 'A') {
         vitoriasA++;
         vitoriasB = 0;
@@ -384,6 +429,7 @@ function registrarVitoria(vencedor) {
 
 
 function resetarPlacar() {
+  salvarEstadoAtual();
   placarA = 0;
   placarB = 0;
   vitoriasA = 0;
@@ -392,6 +438,7 @@ function resetarPlacar() {
 }
 
 function adicionarParticipante(tipoFila) {
+  salvarEstadoAtual();
   let nomeInput;
   let filaAlvo;
   let posicaoSelect;
@@ -433,6 +480,7 @@ function adicionarParticipante(tipoFila) {
 }
 
 function removerParticipante(tipoFila, index) {
+    salvarEstadoAtual();
     let filaAlvo;
     if (tipoFila === 'geral') {
         filaAlvo = filaGeral;
@@ -449,6 +497,7 @@ function removerParticipante(tipoFila, index) {
 
 
 function editarParticipante(tipoFila, index, novoNome) {
+  salvarEstadoAtual();
   novoNome = novoNome.trim();
   if (!novoNome) {
     alert("O nome do participante não pode ser vazio.");
@@ -514,6 +563,7 @@ function editarParticipante(tipoFila, index, novoNome) {
 }
 
 function embaralharFila(tipoFila) {
+  salvarEstadoAtual();
   if (tipoFila === 'geral') {
     shuffleArray(filaGeral);
   } else if (tipoFila === 'estrela') {
@@ -594,6 +644,7 @@ function atualizarStatusPartida() {
 }
 
 function toggleLock(nomeJogador) {
+    salvarEstadoAtual();
     jogadoresTravados[nomeJogador] = !jogadoresTravados[nomeJogador];
     atualizarTela();
 }
@@ -668,6 +719,11 @@ function atualizarTela() {
   document.getElementById("placarA").innerText = placarA;
   document.getElementById("placarB").innerText = placarB;
 
+  const undoButton = document.getElementById('undoButton');
+  if (undoButton) {
+      undoButton.disabled = historicoEstados.length === 0;
+  }
+
   atualizarRanking();
   atualizarStatusPartida();
   setupSortableLists();
@@ -687,6 +743,7 @@ function setupSortableLists() {
             },
             onEnd: function (evt) {
                 if (!evt.item.classList.contains('locked')) {
+                    salvarEstadoAtual();
                     const [movedItem] = filaArray.splice(evt.oldIndex, 1);
                     filaArray.splice(evt.newIndex, 0, movedItem);
                     atualizarTela();
@@ -699,7 +756,7 @@ function setupSortableLists() {
 }
 
 function adicionarPontoAvulso(time) {
-  //const nomeAvulso = "Ponto Avulso (Erro)"; 
+  salvarEstadoAtual();
   if (time === 'A') placarA++;
   else if (time === 'B') placarB++;
 
@@ -711,6 +768,7 @@ function adicionarPontoAvulso(time) {
 }
 
 function removerPontoAvulso(time) {
+  salvarEstadoAtual();
   if (time === 'A' && placarA > 0) placarA--;
   else if (time === 'B' && placarB > 0) placarB--;
   atualizarTela();
@@ -760,7 +818,7 @@ function mostrarHistorico() {
                     </div>
                 </div>
             `;
-            li.className = backgroundClass + ' p-4 rounded-lg shadow-md mb-3'; // Adicionando classes Tailwind diretamente
+            li.className = backgroundClass + ' p-4 rounded-lg shadow-md mb-3';
             listaHistorico.appendChild(li);
         });
     }
@@ -773,6 +831,8 @@ function fecharHistorico() {
 
 carregarDadosIniciais();
 iniciarNovoJogo();
+historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
+atualizarTela(); 
 
 window.onclick = function(event) {
   if (event.target === document.getElementById('modalConfig')) {
