@@ -264,24 +264,32 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
 function verificarVitoriaPartida() {
     const minPontos = pontosVitoria;
 
-    if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
-        return 'ambosSaem';
-    }
-
+    // Lógica de desempate quando ambos estão prestes a vencer
     if (placarA >= minPontos - 1 && placarB >= minPontos - 1) {
+        if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
+            return 'ambosSaem';
+        }
+
         if (tipoDesempate === 'diferenca') {
             const diferencaMinima = 2;
             if (placarA >= placarB + diferencaMinima) return 'A';
             if (placarB >= placarA + diferencaMinima) return 'B';
         } else if (tipoDesempate === 'adicional') {
-            if (placarA >= minPontos + 2) return 'A';
-            if (placarB >= minPontos + 2) return 'B';
+            // Esta lógica para 'adicional' parece incorreta, pois não garante diferença.
+            // A verificação por 'diferenca' geralmente é o padrão.
+            // Se a intenção é um "ponto de ouro" após minPontos + 1, a lógica precisa ser ajustada.
+            // Por exemplo, para um jogo até 21, o desempate vai até 23 (minPontos + 2).
+            if (placarA >= minPontos + 1 && placarA > placarB) return 'A'; // Exemplo ajustado
+            if (placarB >= minPontos + 1 && placarB > placarA) return 'B'; // Exemplo ajustado
         }
     }
 
-    if (placarA >= minPontos) return 'A';
-    if (placarB >= minPontos) return 'B';
+    // Verificação de vitória padrão (ocorre se não houver condição de desempate)
+    if (placarA >= minPontos && placarA > placarB + 1) return 'A';
+    if (placarB >= minPontos && placarB > placarA + 1) return 'B';
 
+
+    // Se nenhuma das condições acima for atendida, o jogo continua
     return null;
 }
 
