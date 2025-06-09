@@ -264,41 +264,36 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
 function verificarVitoriaPartida() {
     const minPontos = pontosVitoria;
 
-    // Verifica se a partida entrou em modo de desempate
+    // REGRA 1: Verificação para "Sai os Dois" (tem a maior prioridade)
+    // Isso acontece exatamente quando o placar atinge (minPontos - 1) vs (minPontos - 1).
+    if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
+        return 'ambosSaem';
+    }
+
+    // REGRA 2: Verificação para os outros tipos de desempate
+    // Ocorre quando ambos os times estão na "zona de perigo" (match point para ambos).
     const emDesempate = placarA >= minPontos - 1 && placarB >= minPontos - 1;
-
     if (emDesempate) {
-        // Se está em desempate, APENAS as regras de desempate são consideradas.
-
         if (tipoDesempate === 'diferenca') {
             if (placarA >= placarB + 2) return 'A';
             if (placarB >= placarA + 2) return 'B';
         } 
         else if (tipoDesempate === 'adicional') {
-            // CORRIGIDO: O alvo é minPontos + 2 (minPontos - 1 + 3)
-            const pontoVitoriaAdicional = minPontos + 2;
+            // Regra corrigida: "Vai a 3 direto" após o empate em (minPontos - 1), 
+            // resultando em um alvo de (minPontos + 2).
+            const pontoVitoriaAdicional = minPontos + 2; 
             if (placarA === pontoVitoriaAdicional) return 'A';
             if (placarB === pontoVitoriaAdicional) return 'B';
-        } 
-        else if (tipoDesempate === 'saiOsDois') {
-            // A regra "saiOsDois" só deve ser acionada no empate exato
-            if (placarA === placarB) {
-                 if (placarA === minPontos - 1){ // Aciona apenas no 11-11 (se minPontos=12)
-                    return 'ambosSaem';
-                 }
-            }
-            // Se não estão empatados, a regra de diferença de 2 pontos se aplica como padrão.
-            if (placarA >= placarB + 2) return 'A';
-            if (placarB >= placarA + 2) return 'B';
         }
-
-    } else {
-        // Se NÃO está em desempate, usa a regra de vitória padrão.
-        if (placarA >= minPontos) return 'A';
-        if (placarB >= minPontos) return 'B';
     }
 
-    // Se nenhuma condição de vitória foi atendida, o jogo continua.
+    // REGRA 3: Verificação de vitória padrão
+    // Ocorre se nenhuma regra especial de desempate foi acionada.
+    // O primeiro a chegar a 'minPontos' vence, desde que o outro time não esteja na zona de desempate.
+    if (placarA >= minPontos && placarA >= placarB + 2) return 'A';
+    if (placarB >= minPontos && placarB >= placarA + 2) return 'B';
+    
+    // Se não há vencedor, o jogo continua.
     return null;
 }
 
