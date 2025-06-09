@@ -281,7 +281,7 @@ function verificarVitoriaPartida() {
         else if (tipoDesempate === 'adicional') {
             // Regra corrigida: "Vai a 3 direto" após o empate em (minPontos - 1), 
             // resultando em um alvo de (minPontos + 2).
-            const pontoVitoriaAdicional = minPontos + 2; 
+            const pontoVitoriaAdicional = minPontos + 3; 
             if (placarA === pontoVitoriaAdicional) return 'A';
             if (placarB === pontoVitoriaAdicional) return 'B';
         }
