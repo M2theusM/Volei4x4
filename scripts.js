@@ -279,8 +279,8 @@ function verificarVitoriaPartida() {
             // A verificação por 'diferenca' geralmente é o padrão.
             // Se a intenção é um "ponto de ouro" após minPontos + 1, a lógica precisa ser ajustada.
             // Por exemplo, para um jogo até 21, o desempate vai até 23 (minPontos + 2).
-            if (placarA >= minPontos + 1 && placarA > placarB) return 'A'; // Exemplo ajustado
-            if (placarB >= minPontos + 1 && placarB > placarA) return 'B'; // Exemplo ajustado
+            if (placarA >= minPontos + 2 && placarA > placarB) return 'A'; // Exemplo ajustado
+            if (placarB >= minPontos + 2 && placarB > placarA) return 'B'; // Exemplo ajustado
         }
     }
 
