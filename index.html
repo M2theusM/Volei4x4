@@ -50,14 +50,10 @@
             </div>
             <div class="config-group mb-6">
                 <label for="maxVitoriasConsecutivas" class="block mb-2 font-medium text-gray-700">🔁 Máximo de vitórias consecutivas:</label>
-                <input type="number" id="maxVitoriasConsecutivas" min="1" value="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                <input type="number" id="maxVitoriasConsecutivas" min="1" value="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
                 <div class="info-text text-sm text-gray-600 mt-1">Número de vitórias seguidas para um time ser desfeito.</div>
             </div>
             <button onclick="salvarConfiguracoes()" class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Salvar</button>
-            
-            <button onclick="zerarTodosOsDados()" class="mt-4 w-full px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75">
-                Zerar Todos os Dados
-            </button>
         </div>
     </div>
 
@@ -75,19 +71,16 @@
                 </div>
             </div>
             <div id="statusPartida" class="status-info text-center text-sm text-gray-600 mt-2 p-2 bg-yellow-100 rounded-md hidden"></div>
-            
             <div class="flex justify-center gap-6 mt-4">
                 <div class="flex gap-3">
                     <button onclick="adicionarPontoAvulso('A')" title="Ponto por erro para Time A" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1</button>
                     <button onclick="removerPontoAvulso('A')" title="Remover ponto avulso Time A" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1</button>
                 </div>
-                <div class="border-l-2 border-gray-300 h-10"></div> 
-                <div class="flex gap-3">
+                <div class="border-l-2 border-gray-300 h-10"></div> <div class="flex gap-3">
                     <button onclick="adicionarPontoAvulso('B')" title="Ponto por erro para Time B" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1</button>
                     <button onclick="removerPontoAvulso('B')" title="Remover ponto avulso Time B" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1</button>
                 </div>
             </div>
-
             <div class="times flex justify-between gap-4 mt-6">
                 <div class="time w-1/2 bg-green-50 p-4 rounded-lg shadow-inner">
                     <h3 class="text-xl font-semibold text-green-800 mb-2 text-center">Time A</h3>
@@ -100,12 +93,6 @@
                     <ul id="timeB" class="space-y-2"></ul>
                 </div>
             </div>
-            
-            <button id="formarTimesBtn" onclick="formarTimesAutomaticamente()" 
-                class="mt-6 w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 hidden">
-                Formar Times
-            </button>
-
             <div class="botoes flex flex-wrap justify-center gap-3 mt-6">
                 <button onclick="registrarVitoria('A')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time A Venceu</button>
                 <button onclick="registrarVitoria('B')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time B Venceu</button>
@@ -141,8 +128,9 @@
 
         <div class="ranking bg-white p-6 rounded-xl shadow-lg">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Ranking de Pontuadores</h2>
+			<h6 class="text-sm font-normal text-gray-600 mb-1">Cada vitória vale 3 pontos e derrotas serão ignoradas.</h6>
             <div class="ranking-header flex items-center py-2 border-b-2 border-gray-300 font-semibold text-gray-700 mb-2">
-                <span class="ranking-pos w-8 text-center">#</span>
+                <span class="ranking-pos w-8 text-center"></span>
                 <span class="ranking-nome flex-1">Nome</span>
                 <span class="ranking-score w-16 text-right">Score</span>
                 <span class="ranking-vitorias w-16 text-right">V</span>
