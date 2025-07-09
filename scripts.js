@@ -1,8 +1,8 @@
 // Previne o zoom no iOS
 document.addEventListener('touchstart', function(event) {
-  if (event.touches.length > 1) {
-    event.preventDefault();
-  }
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
 });
 
 let filaGeral = [];
@@ -163,7 +163,7 @@ function iniciarNovoJogo() {
     const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
     const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
 
-    const estrelasParaAlocar = Math.max(0, estrelasPorTime); 
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime);    
     const jogadoresGeraisPorTime = jogadoresPorTime - estrelasParaAlocar;
 
     if (jogadoresGeraisPorTime < 0) {
@@ -279,7 +279,7 @@ function verificarVitoriaPartida() {
         if (tipoDesempate === 'diferenca') {
             if (placarA >= minPontos && placarA >= placarB + 2) return 'A';
             if (placarB >= minPontos && placarB >= placarA + 2) return 'B';
-        } 
+        }    
         else if (tipoDesempate === 'adicional') {
             const pontoVitoriaAdicional = minPontos + 2;
             if (placarA === pontoVitoriaAdicional) return 'A';
@@ -448,54 +448,54 @@ function registrarVitoria(vencedor) {
 
 
 function resetarPlacar() {
-  salvarEstadoAtual();
-  placarA = 0;
-  placarB = 0;
-  vitoriasA = 0;
-  vitoriasB = 0;
-  atualizarTela();
+    salvarEstadoAtual();
+    placarA = 0;
+    placarB = 0;
+    vitoriasA = 0;
+    vitoriasB = 0;
+    atualizarTela();
 }
 
 function adicionarParticipante(tipoFila) {
-  salvarEstadoAtual();
-  let nomeInput;
-  let filaAlvo;
-  let posicaoSelect;
+    salvarEstadoAtual();
+    let nomeInput;
+    let filaAlvo;
+    let posicaoSelect;
 
-  if (tipoFila === 'geral') {
-    nomeInput = document.getElementById("novoNomeGeral");
-    filaAlvo = filaGeral;
-    posicaoSelect = document.getElementById("posicaoGeral");
-  } else if (tipoFila === 'estrela') {
-    nomeInput = document.getElementById("novoNomeEstrela");
-    filaAlvo = filaEstrela;
-    posicaoSelect = document.getElementById("posicaoEstrela");
-  } else {
-    return;
-  }
-
-  const nome = nomeInput.value.trim();
-  const posicao = posicaoSelect.value;
-
-  if (nome) {
-    if (posicao === 'inicio') {
-        filaAlvo.unshift(nome);
+    if (tipoFila === 'geral') {
+        nomeInput = document.getElementById("novoNomeGeral");
+        filaAlvo = filaGeral;
+        posicaoSelect = document.getElementById("posicaoGeral");
+    } else if (tipoFila === 'estrela') {
+        nomeInput = document.getElementById("novoNomeEstrela");
+        filaAlvo = filaEstrela;
+        posicaoSelect = document.getElementById("posicaoEstrela");
     } else {
-        filaAlvo.push(nome);
+        return;
     }
 
-    if (tipoFila === 'estrela' && !estrelasRegistradas.includes(nome)) {
-        estrelasRegistradas.push(nome);
-    }
+    const nome = nomeInput.value.trim();
+    const posicao = posicaoSelect.value;
 
-    if (!jogadoresStats[nome]) {
-        jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
-    }
-    jogadoresTravados[nome] = false;
+    if (nome) {
+        if (posicao === 'inicio') {
+            filaAlvo.unshift(nome);
+        } else {
+            filaAlvo.push(nome);
+        }
 
-    nomeInput.value = "";
-    atualizarTela();
-  }
+        if (tipoFila === 'estrela' && !estrelasRegistradas.includes(nome)) {
+            estrelasRegistradas.push(nome);
+        }
+
+        if (!jogadoresStats[nome]) {
+            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        jogadoresTravados[nome] = false;
+
+        nomeInput.value = "";
+        atualizarTela();
+    }
 }
 
 function removerParticipante(tipoFila, index) {
@@ -516,79 +516,79 @@ function removerParticipante(tipoFila, index) {
 
 
 function editarParticipante(tipoFila, index, novoNome) {
-  salvarEstadoAtual();
-  novoNome = novoNome.trim();
-  if (!novoNome) {
-    alert("O nome do participante não pode ser vazio.");
-    atualizarTela(); 
-    return;
-  }
-
-  let nomeAntigo;
-  let filaAlvo;
-
-  if (tipoFila === 'geral') {
-    filaAlvo = filaGeral;
-  } else if (tipoFila === 'estrela') {
-    filaAlvo = filaEstrela;
-  } else {
-    return;
-  }
-
-  nomeAntigo = filaAlvo[index];
-
-  if (nomeAntigo === novoNome) {
-    return;
-  }
-
-  const nomeExistente = filaGeral.includes(novoNome) ||
-                         filaEstrela.includes(novoNome) ||
-                         timeA.includes(novoNome) ||
-                         timeB.includes(novoNome);
-
-  if (nomeExistente && nomeAntigo !== novoNome) {
-      alert(`O nome "${novoNome}" já está em uso. Por favor, escolha outro nome.`);
-      atualizarTela(); 
-      return;
-  }
-
-  filaAlvo[index] = novoNome;
-
-  if (tipoFila === 'estrela') {
-    const estrelaIndex = estrelasRegistradas.indexOf(nomeAntigo);
-    if (estrelaIndex > -1) {
-        estrelasRegistradas[estrelaIndex] = novoNome;
+    salvarEstadoAtual();
+    novoNome = novoNome.trim();
+    if (!novoNome) {
+        alert("O nome do participante não pode ser vazio.");
+        atualizarTela();    
+        return;
     }
-  }
 
-  if (jogadoresStats[nomeAntigo]) {
-    jogadoresStats[novoNome] = jogadoresStats[nomeAntigo];
-    delete jogadoresStats[nomeAntigo];
-  } else {
-    jogadoresStats[novoNome] = { pontos: 0, vitorias: 0, derrotas: 0 };
-  }
+    let nomeAntigo;
+    let filaAlvo;
 
-  if (jogadoresTravados.hasOwnProperty(nomeAntigo)) {
-    jogadoresTravados[novoNome] = jogadoresTravados[nomeAntigo];
-    delete jogadoresTravados[nomeAntigo];
-  } else {
-    jogadoresTravados[novoNome] = false;
-  }
+    if (tipoFila === 'geral') {
+        filaAlvo = filaGeral;
+    } else if (tipoFila === 'estrela') {
+        filaAlvo = filaEstrela;
+    } else {
+        return;
+    }
 
-  timeA = timeA.map(j => j === nomeAntigo ? novoNome : j);
-  timeB = timeB.map(j => j === nomeAntigo ? novoNome : j);
+    nomeAntigo = filaAlvo[index];
 
-  atualizarTela();
+    if (nomeAntigo === novoNome) {
+        return;
+    }
+
+    const nomeExistente = filaGeral.includes(novoNome) ||
+                            filaEstrela.includes(novoNome) ||
+                            timeA.includes(novoNome) ||
+                            timeB.includes(novoNome);
+
+    if (nomeExistente && nomeAntigo !== novoNome) {
+        alert(`O nome "${novoNome}" já está em uso. Por favor, escolha outro nome.`);
+        atualizarTela();    
+        return;
+    }
+
+    filaAlvo[index] = novoNome;
+
+    if (tipoFila === 'estrela') {
+        const estrelaIndex = estrelasRegistradas.indexOf(nomeAntigo);
+        if (estrelaIndex > -1) {
+            estrelasRegistradas[estrelaIndex] = novoNome;
+        }
+    }
+
+    if (jogadoresStats[nomeAntigo]) {
+        jogadoresStats[novoNome] = jogadoresStats[nomeAntigo];
+        delete jogadoresStats[nomeAntigo];
+    } else {
+        jogadoresStats[novoNome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+    }
+
+    if (jogadoresTravados.hasOwnProperty(nomeAntigo)) {
+        jogadoresTravados[novoNome] = jogadoresTravados[nomeAntigo];
+        delete jogadoresTravados[nomeAntigo];
+    } else {
+        jogadoresTravados[novoNome] = false;
+    }
+
+    timeA = timeA.map(j => j === nomeAntigo ? novoNome : j);
+    timeB = timeB.map(j => j === nomeAntigo ? novoNome : j);
+
+    atualizarTela();
 }
 
 function embaralharFila(tipoFila) {
-  salvarEstadoAtual();
-  if (tipoFila === 'geral') {
-    shuffleArray(filaGeral);
-  } else if (tipoFila === 'estrela') {
-    shuffleArray(filaEstrela);
-  }
-  atualizarTela();
+    salvarEstadoAtual();
+    if (tipoFila === 'geral') {
+        shuffleArray(filaGeral);
+    } else if (tipoFila === 'estrela') {
+        shuffleArray(filaEstrela);
+    }
+    atualizarTela();
 }
 
 function atualizarRanking() {
@@ -598,28 +598,40 @@ function atualizarRanking() {
             if (!jogadoresStats[nome]) {
                 jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
             }
-            return [nome, jogadoresStats[nome]];
+            // Calculate the new score
+            const score = (jogadoresStats[nome].vitorias * 3) + jogadoresStats[nome].pontos;
+            return { nome: nome, stats: jogadoresStats[nome], score: score }; // Return an object for clarity
         })
-        .filter(([nome, stats]) => stats.pontos > 0 || stats.vitorias > 0 || stats.derrotas > 0)
+        .filter(entry => entry.stats.pontos > 0 || entry.stats.vitorias > 0 || entry.stats.derrotas > 0)
         .sort((a, b) => {
-            if (b[1].pontos !== a[1].pontos) {
-                return b[1].pontos - a[1].pontos;
+            // Sort by Score (descending)
+            if (b.score !== a.score) {
+                return b.score - a.score;
             }
-            if (b[1].vitorias !== a[1].vitorias) {
-                return b[1].vitorias - a[1].vitorias;
+            // If scores are equal, sort by Victories (descending)
+            if (b.stats.vitorias !== a.stats.vitorias) {
+                return b.stats.vitorias - a.stats.vitorias;
             }
-            return a[1].derrotas - b[1].derrotas;
+            // If victories are also equal, sort by Points (descending)
+            if (b.stats.pontos !== a.stats.pontos) {
+                return b.stats.pontos - a.stats.pontos;
+            }
+            // If points are also equal, sort by Losses (ascending - fewer losses is better)
+            return a.stats.derrotas - b.stats.derrotas;
         });
 
     const rankingHTML = rankingArray.map((entry, index) => {
-        const nome = entry[0];
-        const stats = entry[1];
+        const nome = entry.nome;
+        const stats = entry.stats;
+        const score = entry.score; // Use the calculated score
+
         return `
             <li class="flex items-center py-2 border-b border-gray-200 last:border-b-0">
                 <span class="ranking-pos font-bold text-blue-600 w-8 text-center">${index + 1}º</span>
                 <span class="ranking-nome flex-1 text-gray-700">${nome}</span>
-                <span class="ranking-pontos font-bold text-green-600 w-16 text-right">${stats.pontos} pts</span>
+                <span class="ranking-score font-bold text-purple-600 w-16 text-right">${score}</span>
                 <span class="ranking-vitorias font-bold text-blue-600 w-16 text-right">${stats.vitorias} V</span>
+                <span class="ranking-pontos font-bold text-green-600 w-16 text-right">${stats.pontos} pts</span>
                 <span class="ranking-derrotas font-bold text-red-600 w-16 text-right">${stats.derrotas} D</span>
             </li>
         `;
@@ -630,36 +642,36 @@ function atualizarRanking() {
 
 
 function atualizarStatusPartida() {
-  const statusEl = document.getElementById('statusPartida');
-  const minPontos = pontosVitoria;
-  let statusText = '';
-  let displayStatus = false;
+    const statusEl = document.getElementById('statusPartida');
+    const minPontos = pontosVitoria;
+    let statusText = '';
+    let displayStatus = false;
 
-  if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
-      statusText = `🚨 ATENÇÃO: Ambos os times em ${minPontos -1} pontos. Próximo ponto define se alguém vence ou ambos saem!`;
-      displayStatus = true;
-  } else if (placarA >= minPontos - 1 && placarB >= minPontos - 1) { 
-    if (tipoDesempate === 'diferenca') {
-      statusText = `⚡ DESEMPATE: É necessário abrir 2 pontos de diferença para vencer.`;
-    } else if (tipoDesempate === 'adicional') {
-      statusText = `⚡ DESEMPATE: Vence quem alcançar ${minPontos + 2} pontos.`;
+    if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
+        statusText = `🚨 ATENÇÃO: Ambos os times em ${minPontos -1} pontos. Próximo ponto define se alguém vence ou ambos saem!`;
+        displayStatus = true;
+    } else if (placarA >= minPontos - 1 && placarB >= minPontos - 1) {    
+        if (tipoDesempate === 'diferenca') {
+            statusText = `⚡ DESEMPATE: É necessário abrir 2 pontos de diferença para vencer.`;
+        } else if (tipoDesempate === 'adicional') {
+            statusText = `⚡ DESEMPATE: Vence quem alcançar ${minPontos + 2} pontos.`;
+        }
+        displayStatus = true;
+    } else if (placarA >= minPontos -1 ) {    
+        statusText = `🔥 Match point para o Time A! (${minPontos - placarA} ponto${minPontos - placarA !== 1 ? 's' : ''} para vencer)`;
+        displayStatus = true;
+    } else if (placarB >= minPontos -1) {    
+        statusText = `🔥 Match point para o Time B! (${minPontos - placarB} ponto${minPontos - placarB !== 1 ? 's' : ''} para vencer)`;
+        displayStatus = true;
     }
-    displayStatus = true;
-  } else if (placarA >= minPontos -1 ) { 
-      statusText = `🔥 Match point para o Time A! (${minPontos - placarA} ponto${minPontos - placarA !== 1 ? 's' : ''} para vencer)`;
-      displayStatus = true;
-  } else if (placarB >= minPontos -1) { 
-      statusText = `🔥 Match point para o Time B! (${minPontos - placarB} ponto${minPontos - placarB !== 1 ? 's' : ''} para vencer)`;
-      displayStatus = true;
-  }
 
 
-  statusEl.innerHTML = statusText;
-  if (displayStatus) {
-      statusEl.classList.remove('hidden');
-  } else {
-      statusEl.classList.add('hidden');
-  }
+    statusEl.innerHTML = statusText;
+    if (displayStatus) {
+        statusEl.classList.remove('hidden');
+    } else {
+        statusEl.classList.add('hidden');
+    }
 }
 
 function toggleLock(nomeJogador) {
@@ -669,83 +681,83 @@ function toggleLock(nomeJogador) {
 }
 
 function atualizarTela() {
-  document.getElementById("timeA").innerHTML = timeA.map((j, i) => `
-    <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
-      <div class="flex items-center w-full">
-        <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('A', '${j.replace(/'/g, "\\'")}')" title="Marcar ponto">+</button>
-        <div class="flex-1 relative">
-          <span class="jogador-nome text-gray-700 font-medium">${j} ${estrelasRegistradas.includes(j) ? '⭐' : ''}</span>
-          <select onchange="if(this.value != -1) trocarJogador('A', ${i}, this.options[this.selectedIndex].dataset.fila, this.value);" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-            <option value="-1">Trocar com...</option>
-            <optgroup label="Fila 1">
-              ${filaGeral.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaGeral.indexOf(f)}" data-fila="geral">${f}</option>`).join("")}
-            </optgroup>
-            <optgroup label="Fila 2">
-              ${filaEstrela.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaEstrela.indexOf(f)}" data-fila="estrela">${f} ⭐</option>`).join("")}
-            </optgroup>
-          </select>
-        </div>
-        <span class="ml-auto text-gray-400 text-sm">▼</span>
-      </div>
-    </li>`).join("");
+    document.getElementById("timeA").innerHTML = timeA.map((j, i) => `
+        <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
+            <div class="flex items-center w-full">
+                <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('A', '${j.replace(/'/g, "\\'")}')" title="Marcar ponto">+</button>
+                <div class="flex-1 relative">
+                    <span class="jogador-nome text-gray-700 font-medium">${j} ${estrelasRegistradas.includes(j) ? '⭐' : ''}</span>
+                    <select onchange="if(this.value != -1) trocarJogador('A', ${i}, this.options[this.selectedIndex].dataset.fila, this.value);" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        <option value="-1">Trocar com...</option>
+                        <optgroup label="Fila 1">
+                            ${filaGeral.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaGeral.indexOf(f)}" data-fila="geral">${f}</option>`).join("")}
+                        </optgroup>
+                        <optgroup label="Fila 2">
+                            ${filaEstrela.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaEstrela.indexOf(f)}" data-fila="estrela">${f} ⭐</option>`).join("")}
+                        </optgroup>
+                    </select>
+                </div>
+                <span class="ml-auto text-gray-400 text-sm">▼</span>
+            </div>
+        </li>`).join("");
 
-  document.getElementById("timeB").innerHTML = timeB.map((j, i) => `
-    <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
-      <div class="flex items-center w-full">
-        <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('B', '${j.replace(/'/g, "\\'")}')" title="Marcar ponto">+</button>
-        <div class="flex-1 relative">
-          <span class="jogador-nome text-gray-700 font-medium">${j} ${estrelasRegistradas.includes(j) ? '⭐' : ''}</span>
-          <select onchange="if(this.value != -1) trocarJogador('B', ${i}, this.options[this.selectedIndex].dataset.fila, this.value);" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-            <option value="-1">Trocar com...</option>
-            <optgroup label="Fila 1">
-              ${filaGeral.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaGeral.indexOf(f)}" data-fila="geral">${f}</option>`).join("")}
-            </optgroup>
-            <optgroup label="Fila 2">
-              ${filaEstrela.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaEstrela.indexOf(f)}" data-fila="estrela">${f} ⭐</option>`).join("")}
-            </optgroup>
-          </select>
-        </div>
-        <span class="ml-auto text-gray-400 text-sm">▼</span>
-      </div>
-    </li>`).join("");
+    document.getElementById("timeB").innerHTML = timeB.map((j, i) => `
+        <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
+            <div class="flex items-center w-full">
+                <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('B', '${j.replace(/'/g, "\\'")}')" title="Marcar ponto">+</button>
+                <div class="flex-1 relative">
+                    <span class="jogador-nome text-gray-700 font-medium">${j} ${estrelasRegistradas.includes(j) ? '⭐' : ''}</span>
+                    <select onchange="if(this.value != -1) trocarJogador('B', ${i}, this.options[this.selectedIndex].dataset.fila, this.value);" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        <option value="-1">Trocar com...</option>
+                        <optgroup label="Fila 1">
+                            ${filaGeral.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaGeral.indexOf(f)}" data-fila="geral">${f}</option>`).join("")}
+                        </optgroup>
+                        <optgroup label="Fila 2">
+                            ${filaEstrela.filter(f => !jogadoresTravados[f]).map((f, idx) => `<option value="${filaEstrela.indexOf(f)}" data-fila="estrela">${f} ⭐</option>`).join("")}
+                        </optgroup>
+                    </select>
+                </div>
+                <span class="ml-auto text-gray-400 text-sm">▼</span>
+            </div>
+        </li>`).join("");
 
-  document.getElementById("filaGeral").innerHTML = filaGeral.map((j, i) => `
-    <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
-      <span class="drag-handle text-gray-400 mr-2">☰</span>
-      <span class="w-8 text-center text-gray-600">${i + 1}.</span>
-      <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('geral', ${i}, this.value)" ${jogadoresTravados[j] ? 'disabled' : ''} class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
-      <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
-        ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
-      </span>
-      <button onclick="removerParticipante('geral', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
-    </li>
-  `).join("");
+    document.getElementById("filaGeral").innerHTML = filaGeral.map((j, i) => `
+        <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
+            <span class="drag-handle text-gray-400 mr-2">☰</span>
+            <span class="w-8 text-center text-gray-600">${i + 1}.</span>
+            <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('geral', ${i}, this.value)" ${jogadoresTravados[j] ? 'disabled' : ''} class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
+            <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
+                ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
+            </span>
+            <button onclick="removerParticipante('geral', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
+        </li>
+    `).join("");
 
-  document.getElementById("filaEstrela").innerHTML = filaEstrela.map((j, i) => `
-    <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
-      <span class="drag-handle text-gray-400 mr-2">☰</span>
-      <span class="w-8 text-center text-gray-600">${i + 1}.</span>
-      <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('estrela', ${i}, this.value)" ${jogadoresTravados[j] ? 'disabled' : ''} class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
-      <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
-        ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
-      </span>
-      <button onclick="removerParticipante('estrela', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
-    </li>
-  `).join("");
+    document.getElementById("filaEstrela").innerHTML = filaEstrela.map((j, i) => `
+        <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
+            <span class="drag-handle text-gray-400 mr-2">☰</span>
+            <span class="w-8 text-center text-gray-600">${i + 1}.</span>
+            <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('estrela', ${i}, this.value)" ${jogadoresTravados[j] ? 'disabled' : ''} class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
+            <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
+                ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
+            </span>
+            <button onclick="removerParticipante('estrela', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
+        </li>
+    `).join("");
 
-  document.getElementById("vitoriasA").innerText = vitoriasA;
-  document.getElementById("vitoriasB").innerText = vitoriasB;
-  document.getElementById("placarA").innerText = placarA;
-  document.getElementById("placarB").innerText = placarB;
+    document.getElementById("vitoriasA").innerText = vitoriasA;
+    document.getElementById("vitoriasB").innerText = vitoriasB;
+    document.getElementById("placarA").innerText = placarA;
+    document.getElementById("placarB").innerText = placarB;
 
-  const undoButton = document.getElementById('undoButton');
-  if (undoButton) {
-      undoButton.disabled = historicoEstados.length === 0;
-  }
+    const undoButton = document.getElementById('undoButton');
+    if (undoButton) {
+        undoButton.disabled = historicoEstados.length === 0;
+    }
 
-  atualizarRanking();
-  atualizarStatusPartida();
-  setupSortableLists();
+    atualizarRanking();
+    atualizarStatusPartida();
+    setupSortableLists();
 }
 
 function setupSortableLists() {
@@ -775,22 +787,22 @@ function setupSortableLists() {
 }
 
 function adicionarPontoAvulso(time) {
-  salvarEstadoAtual();
-  if (time === 'A') placarA++;
-  else if (time === 'B') placarB++;
+    salvarEstadoAtual();
+    if (time === 'A') placarA++;
+    else if (time === 'B') placarB++;
 
-  const vencedor = verificarVitoriaPartida();
-  if (vencedor) {
-      registrarVitoria(vencedor);
-  }
-  atualizarTela();
+    const vencedor = verificarVitoriaPartida();
+    if (vencedor) {
+        registrarVitoria(vencedor);
+    }
+    atualizarTela();
 }
 
 function removerPontoAvulso(time) {
-  salvarEstadoAtual();
-  if (time === 'A' && placarA > 0) placarA--;
-  else if (time === 'B' && placarB > 0) placarB--;
-  atualizarTela();
+    salvarEstadoAtual();
+    if (time === 'A' && placarA > 0) placarA--;
+    else if (time === 'B' && placarB > 0) placarB--;
+    atualizarTela();
 }
 
 function mostrarHistorico() {
@@ -800,8 +812,8 @@ function mostrarHistorico() {
     if (historicoPartidas.length === 0) {
         listaHistorico.innerHTML = '<li class="text-center text-gray-500 py-4">Nenhuma partida registrada ainda.</li>';
     } else {
-        const historicoInvertido = [...historicoPartidas].reverse(); 
-        historicoInvertido.forEach((partida) => { 
+        const historicoInvertido = [...historicoPartidas].reverse();    
+        historicoInvertido.forEach((partida) => {    
             const numeroPartidaOriginal = historicoPartidas.length - historicoInvertido.indexOf(partida);
 
             const li = document.createElement('li');
@@ -810,8 +822,8 @@ function mostrarHistorico() {
             else if (partida.vencedor === 'Time B') backgroundClass = 'historico-vitoria-b';
             else backgroundClass = 'historico-empate';
 
-            const classePlacarVencedorA = partida.vencedor === 'Time A' ? 'vencedorA' : '';
-            const classePlacarVencedorB = partida.vencedor === 'Time B' ? 'vencedorB' : '';
+            const classePlacarVencedorA = partida.placarFinalA > partida.placarFinalB ? 'vencedorA' : '';
+            const classePlacarVencedorB = partida.placarFinalB > partida.placarFinalA ? 'vencedorB' : '';
 
             li.innerHTML = `
                 <div class="text-center mb-2">
@@ -851,13 +863,13 @@ function fecharHistorico() {
 carregarDadosIniciais();
 iniciarNovoJogo();
 historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
-atualizarTela(); 
+atualizarTela();    
 
 window.onclick = function(event) {
-  if (event.target === document.getElementById('modalConfig')) {
-    fecharConfiguracoes();
-  }
-  if (event.target === document.getElementById('modalHistorico')) {
-    fecharHistorico();
-  }
+    if (event.target === document.getElementById('modalConfig')) {
+        fecharConfiguracoes();
+    }
+    if (event.target === document.getElementById('modalHistorico')) {
+        fecharHistorico();
+    }
 }
