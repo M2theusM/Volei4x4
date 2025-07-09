@@ -28,7 +28,7 @@ let historicoPartidas = [];
 let historicoEstados = [];
 const MAX_UNDO_HISTORY = 30;
 
-// Funções para Desfazer Ação
+// Funções para Desfazer Ação (mantidas)
 function salvarEstadoAtual() {
     const estado = {
         filaGeral: JSON.parse(JSON.stringify(filaGeral)),
@@ -62,7 +62,7 @@ function restaurarEstado(estado) {
     placarB = estado.placarB;
     jogadoresStats = estado.jogadoresStats;
     jogadoresTravados = estado.jogadoresTravados;
-    historicoPartidas = estado.historicoPartidas;
+    historicoPartidas = estado.historicoPartidas; // Restaurar histórico também
 }
 
 function desfazerUltimaAcao() {
@@ -76,7 +76,109 @@ function desfazerUltimaAcao() {
 }
 
 
-// Função para carregar as configurações iniciais
+// --- NOVAS FUNÇÕES PARA PERSISTÊNCIA E INICIALIZAÇÃO ---
+
+// Salva o estado principal das filas e jogadores no localStorage
+function saveGameState() {
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+}
+
+// Carrega o estado principal das filas e jogadores do localStorage
+// Adicionado um parâmetro 'forceReset' para quando o botão "Zerar Dados" for usado
+function loadGameState(forceReset = false) {
+    const savedFilaGeral = localStorage.getItem('filaGeral');
+    const savedFilaEstrela = localStorage.getItem('filaEstrela');
+    const savedEstrelasRegistradas = localStorage.getItem('estrelasRegistradas');
+    const savedJogadoresStats = localStorage.getItem('jogadoresStats');
+    const savedJogadoresTravados = localStorage.getItem('jogadoresTravados');
+
+    if (forceReset || !(savedFilaGeral && savedFilaEstrela && savedEstrelasRegistradas && savedJogadoresStats && savedJogadoresTravados)) {
+        // Se forceReset for true OU não houver dados salvos, inicialize com dados de exemplo
+        console.log("Inicializando com jogadores padrão (dados zerados ou primeira abertura).");
+        inicializarFilaEPrefabs(); // Popula filas com jogadores padrão
+    } else {
+        // Se houver dados salvos e não for um reset forçado, carregue-os
+        filaGeral = JSON.parse(savedFilaGeral);
+        filaEstrela = JSON.parse(savedFilaEstrela);
+        estrelasRegistradas = JSON.parse(savedEstrelasRegistradas);
+        jogadoresStats = JSON.parse(savedJogadoresStats);
+        jogadoresTravados = JSON.parse(savedJogadoresTravados);
+        console.log("Estado dos jogadores e filas carregado do localStorage.");
+    }
+    
+    // Garante que os times estão vazios e o placar resetado ao iniciar a sessão
+    timeA = [];
+    timeB = [];
+    resetPlacarEContadoresDeVitoria(); 
+}
+
+// Inicializa as filas com jogadores padrão (usado na primeira abertura ou após zerar dados)
+function inicializarFilaEPrefabs() {
+    filaGeral = ["Alan", "Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Júlio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela", "Rafael", "Wendel"];
+    filaEstrela = ["Daniele", "Gaby", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
+    estrelasRegistradas = [...filaEstrela];
+
+    // Zera as estatísticas de jogadores para um reset completo
+    jogadoresStats = {}; 
+    jogadoresTravados = {};
+
+    // Inicializa estatísticas e status de travamento para esses jogadores
+    [...filaGeral, ...filaEstrela].forEach(nome => {
+        if (!jogadoresStats[nome]) {
+            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        if (!jogadoresTravados.hasOwnProperty(nome)) {
+            jogadoresTravados[nome] = false;
+        }
+    });
+    saveGameState(); // Salva este estado inicial/zerado
+}
+
+// Reseta apenas o placar e os contadores de vitória consecutiva
+function resetPlacarEContadoresDeVitoria() {
+    placarA = 0;
+    placarB = 0;
+    vitoriasA = 0;
+    vitoriasB = 0;
+}
+
+// --- NOVO: Função para zerar todos os dados do aplicativo ---
+function zerarTodosOsDados() {
+    if (confirm("Tem certeza que deseja zerar TODOS os dados de jogadores, filas e estatísticas? Esta ação é irreversível.")) {
+        // Limpa todos os itens relevantes do localStorage
+        localStorage.removeItem('filaGeral');
+        localStorage.removeItem('filaEstrela');
+        localStorage.removeItem('estrelasRegistradas');
+        localStorage.removeItem('jogadoresStats');
+        localStorage.removeItem('jogadoresTravados');
+        localStorage.removeItem('pontosVitoria'); // Também reseta as configurações para o padrão
+        localStorage.removeItem('tipoDesempate');
+        localStorage.removeItem('estrelasPorTime');
+        localStorage.removeItem('jogadoresPorTime');
+        localStorage.removeItem('maxVitoriasConsecutivas');
+
+        // Limpa o histórico de undo e o histórico de partidas (que não é persistido)
+        historicoEstados = [];
+        historicoPartidas = [];
+
+        // Recarrega o estado do aplicativo como se fosse a primeira abertura
+        carregarDadosIniciais(); // Carrega configurações padrão
+        loadGameState(true); // Força a reinicialização dos jogadores e filas
+        atualizarTela();     // Atualiza a UI para refletir o estado zerado
+        fecharConfiguracoes(); // Fecha o modal de configurações
+        alert("Todos os dados foram zerados com sucesso!");
+    }
+}
+
+
+// --- FIM DAS NOVAS FUNÇÕES PARA PERSISTÊNCIA E INICIALIZAÇÃO ---
+
+
+// Função para carregar as configurações (mantida, já usa localStorage)
 function carregarDadosIniciais() {
     pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
     tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
@@ -85,7 +187,7 @@ function carregarDadosIniciais() {
     maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 3;
 }
 
-// Função para salvar as configurações
+// Função para salvar as configurações (mantida)
 function salvarConfiguracoes() {
     const novosPontosVitoria = parseInt(document.getElementById('pontosPartida').value);
     const novoTipoDesempate = document.getElementById('tipoDesempate').value;
@@ -112,7 +214,7 @@ function salvarConfiguracoes() {
         localStorage.setItem('maxVitoriasConsecutivas', maxVitoriasConsecutivas);
 
         fecharConfiguracoes();
-        atualizarTela();
+        atualizarTela(); // Atualiza a tela após salvar configurações
     } else {
         alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Mín. estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: maior que 0.");
     }
@@ -138,62 +240,59 @@ function shuffleArray(array) {
     }
 }
 
-function iniciarNovoJogo() {
-    salvarEstadoAtual();
+// NOVA FUNÇÃO: Forma os times de A e B puxando da fila
+function formarTimesAutomaticamente() {
+    salvarEstadoAtual(); // Salva o estado antes da formação de times
+
+    // Zera os times em quadra para a nova formação
     timeA = [];
     timeB = [];
-    vitoriasA = 0;
-    vitoriasB = 0;
-    placarA = 0;
-    placarB = 0;
-    jogadoresStats = {};
-    jogadoresTravados = {};
-
-    filaGeral = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4", "Jogador 5", "Jogador 6"];
-    filaEstrela = ["Jogador A", "Jogador B"];
-    estrelasRegistradas = [...filaEstrela];
-
-    [...filaGeral, ...filaEstrela].forEach(nome => {
-        if (!jogadoresStats[nome]) {
-            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
-        }
-        jogadoresTravados[nome] = false;
-    });
-
+    
     const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
     const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
+    
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime);
+    const jogadoresGeraisPorTimeCalc = jogadoresPorTime - estrelasParaAlocar;
 
-    const estrelasParaAlocar = Math.max(0, estrelasPorTime);    
-    const jogadoresGeraisPorTime = jogadoresPorTime - estrelasParaAlocar;
-
-    if (jogadoresGeraisPorTime < 0) {
+    if (jogadoresGeraisPorTimeCalc < 0) {
         alert(`Configuração inválida: O número de jogadores por time (${jogadoresPorTime}) é menor que o mínimo de estrelas por time (${estrelasParaAlocar}). Ajuste nas configurações.`);
         atualizarTela();
         return;
     }
 
-    if (filaEstrelaDisponivel.length < (estrelasParaAlocar * 2) || filaGeralDisponivel.length < (jogadoresGeraisPorTime * 2)) {
-        alert(`É necessário ter pelo menos ${estrelasParaAlocar * 2} jogadores estrela e ${jogadoresGeraisPorTime * 2} jogadores na fila geral disponíveis para iniciar um jogo com ${jogadoresPorTime} jogadores por time (sendo ${estrelasParaAlocar} estrelas no mínimo).`);
+    if (filaEstrelaDisponivel.length < (estrelasParaAlocar * 2) || filaGeralDisponivel.length < (jogadoresGeraisPorTimeCalc * 2)) {
+        alert(`Não há jogadores suficientes disponíveis nas filas para formar novos times com ${jogadoresPorTime} jogadores por time (sendo ${estrelasParaAlocar} estrelas no mínimo). Adicione mais jogadores ou ajuste as configurações.`);
         atualizarTela();
-        return;
+        return; // Impede a formação de times incompletos
     }
 
+    // Forma Time A
     for (let i = 0; i < estrelasParaAlocar; i++) {
         timeA.push(filaEstrelaDisponivel.shift());
+    }
+    for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
+        timeA.push(filaGeralDisponivel.shift());
+    }
+
+    // Forma Time B
+    for (let i = 0; i < estrelasParaAlocar; i++) {
         timeB.push(filaEstrelaDisponivel.shift());
     }
-
-    for (let i = 0; i < jogadoresGeraisPorTime; i++) {
-        timeA.push(filaGeralDisponivel.shift());
+    for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
         timeB.push(filaGeralDisponivel.shift());
     }
-
+    
+    // Remove os jogadores alocados das filas originais
     filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
     filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
 
-    atualizarTela();
+    resetPlacarEContadoresDeVitoria(); // Zera o placar e contadores para a nova partida
+    saveGameState(); // Salva o estado das filas após a formação dos times
+    atualizarTela(); // Atualiza a interface
 }
 
+
+// `trocarJogador` (mantida)
 function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
     salvarEstadoAtual();
     const indexFila = parseInt(indexFilaString);
@@ -258,24 +357,21 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
         filaGeral.push(jogadorParaSair);
     }
 
+    saveGameState(); // Salva estado após a troca
     atualizarTela();
 }
 
+// `verificarVitoriaPartida` (mantida)
 function verificarVitoriaPartida() {
     const minPontos = pontosVitoria;
 
-    // REGRA 1: Verificação para "Sai os Dois" (tem a maior prioridade e é muito específica)
     if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
         return 'ambosSaem';
     }
 
-    // Define se o jogo está na "zona de desempate"
     const emDesempate = placarA >= minPontos - 1 && placarB >= minPontos - 1;
 
     if (emDesempate) {
-        // --- MODO DESEMPATE ATIVO ---
-        // Se entrou aqui, SÓ as regras de desempate valem.
-
         if (tipoDesempate === 'diferenca') {
             if (placarA >= minPontos && placarA >= placarB + 2) return 'A';
             if (placarB >= minPontos && placarB >= placarA + 2) return 'B';
@@ -285,25 +381,18 @@ function verificarVitoriaPartida() {
             if (placarA === pontoVitoriaAdicional) return 'A';
             if (placarB === pontoVitoriaAdicional) return 'B';
         }
-        // Se a regra é 'saiOsDois' mas o placar já passou de minPontos-1 (e não terminou no empate exato),
-        // ela se comporta como uma regra de diferença de 2.
         else if (tipoDesempate === 'saiOsDois') {
             if (placarA >= minPontos && placarA >= placarB + 2) return 'A';
             if (placarB >= minPontos && placarB >= placarA + 2) return 'B';
         }
-
     } else {
-        // --- MODO DE VITÓRIA PADRÃO ---
-        // Só entra aqui se o jogo NÃO está em desempate.
-        // O primeiro a atingir 'minPontos' vence.
         if (placarA >= minPontos) return 'A';
         if (placarB >= minPontos) return 'B';
     }
-
-    // Se nenhuma condição de vitória foi atendida, o jogo continua.
     return null;
 }
 
+// `marcarPonto` (mantida, mas com saveGameState)
 function marcarPonto(time, jogador) {
     salvarEstadoAtual();
     if (!jogadoresStats[jogador]) {
@@ -314,6 +403,7 @@ function marcarPonto(time, jogador) {
     if (time === 'A') placarA++;
     else placarB++;
 
+    saveGameState(); // Salva o estado após marcar ponto
     const vencedor = verificarVitoriaPartida();
     if (vencedor) {
         registrarVitoria(vencedor);
@@ -321,8 +411,11 @@ function marcarPonto(time, jogador) {
     atualizarTela();
 }
 
+// `registrarVitoria` (modificada para chamar formarTimesAutomaticamente)
 function registrarVitoria(vencedor) {
-    salvarEstadoAtual();
+    salvarEstadoAtual(); // Salva o estado antes de processar a vitória
+
+    // Atualiza estatísticas de vitórias/derrotas
     if (vencedor === 'A') {
         vitoriasA++;
         vitoriasB = 0;
@@ -352,6 +445,7 @@ function registrarVitoria(vencedor) {
         });
     }
 
+    // Registra a partida no histórico
     historicoPartidas.unshift({
         timeA: [...timeA],
         timeB: [...timeB],
@@ -360,25 +454,33 @@ function registrarVitoria(vencedor) {
         vencedor: vencedor === 'ambosSaem' ? 'Empate/Ambos Saíram' : `Time ${vencedor}`,
         data: new Date().toLocaleString('pt-BR')
     });
-
+    
     let jogadoresParaFila = [];
+    let deveFormarNovosTimes = false;
+
+    // Define quais jogadores saem de quadra e quais times precisam ser re-formados
     if (vencedor === 'ambosSaem' || vitoriasA >= maxVitoriasConsecutivas || vitoriasB >= maxVitoriasConsecutivas) {
+        // Ambos os times saem ou limite de vitórias consecutivas atingido
         jogadoresParaFila = [...timeA, ...timeB];
         timeA = [];
         timeB = [];
-        vitoriasA = 0;
-        vitoriasB = 0;
+        deveFormarNovosTimes = true; 
     } else if (vencedor === 'A') {
+        // Apenas o Time B perdedor sai
         jogadoresParaFila = [...timeB];
         timeB = [];
+        deveFormarNovosTimes = true; 
     } else if (vencedor === 'B') {
+        // Apenas o Time A perdedor sai
         jogadoresParaFila = [...timeA];
         timeA = [];
+        deveFormarNovosTimes = true; 
     }
 
-    shuffleArray(jogadoresParaFila);
+    // Adiciona os jogadores que saíram de quadra de volta às suas respectivas filas
+    shuffleArray(jogadoresParaFila); // Embaralha para que a fila tenha uma ordem aleatória
     jogadoresParaFila.forEach(j => {
-        if (!jogadoresTravados[j]) {
+        if (!jogadoresTravados[j]) { // Só adiciona se o jogador não estiver travado
             if (estrelasRegistradas.includes(j)) {
                 filaEstrela.push(j);
             } else {
@@ -387,75 +489,26 @@ function registrarVitoria(vencedor) {
         }
     });
 
-    const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
-    const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
-    
-    const estrelasParaAlocar = Math.max(0, estrelasPorTime);
-    const jogadoresGeraisPorTimeCalc = jogadoresPorTime - estrelasParaAlocar;
+    resetPlacarEContadoresDeVitoria(); // Zera o placar e contadores para a próxima partida
+    saveGameState(); // Salva o estado atualizado das filas e stats
 
-    if (jogadoresGeraisPorTimeCalc < 0 && (timeA.length === 0 || timeB.length === 0)) {
-        alert(`Configuração inválida para formar novo(s) time(s): O número de jogadores por time (${jogadoresPorTime}) é menor que o mínimo de estrelas por time (${estrelasParaAlocar}). Ajuste nas configurações.`);
-        placarA = 0;
-        placarB = 0;
-        atualizarTela();
-        return;
+    // Se a condição exige a formação de novos times, chama a função automática
+    if (deveFormarNovosTimes) {
+        formarTimesAutomaticamente(); // Esta função também chama atualizarTela()
+    } else {
+        atualizarTela(); // Se nenhuma formação automática é necessária, apenas atualiza a tela
     }
-    
-    if (timeA.length === 0 && timeB.length === 0) {
-        if (filaEstrelaDisponivel.length >= (estrelasParaAlocar * 2) && filaGeralDisponivel.length >= (jogadoresGeraisPorTimeCalc * 2)) {
-            for (let i = 0; i < estrelasParaAlocar; i++) {
-                timeA.push(filaEstrelaDisponivel.shift());
-                timeB.push(filaEstrelaDisponivel.shift());
-            }
-            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
-                timeA.push(filaGeralDisponivel.shift());
-                timeB.push(filaGeralDisponivel.shift());
-            }
-        } else {
-            alert("Não há jogadores suficientes disponíveis nas filas para formar novos times com o mínimo de estrelas configurado.");
-        }
-    } else if (timeB.length === 0) { // Time B saiu, formar novo Time B
-        if (filaEstrelaDisponivel.length >= estrelasParaAlocar && filaGeralDisponivel.length >= jogadoresGeraisPorTimeCalc) {
-            for (let i = 0; i < estrelasParaAlocar; i++) {
-                timeB.push(filaEstrelaDisponivel.shift());
-            }
-            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
-                timeB.push(filaGeralDisponivel.shift());
-            }
-        } else {
-            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time B com o mínimo de estrelas configurado.");
-        }
-    } else if (timeA.length === 0) { // Time A saiu, formar novo Time A
-        if (filaEstrelaDisponivel.length >= estrelasParaAlocar && filaGeralDisponivel.length >= jogadoresGeraisPorTimeCalc) {
-            for (let i = 0; i < estrelasParaAlocar; i++) {
-                timeA.push(filaEstrelaDisponivel.shift());
-            }
-            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
-                timeA.push(filaGeralDisponivel.shift());
-            }
-        } else {
-            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time A com o mínimo de estrelas configurado.");
-        }
-    }
-
-    filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
-    filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
-
-    placarA = 0;
-    placarB = 0;
-    atualizarTela();
 }
 
 
+// `resetarPlacar` (Mantida, agora usando resetPlacarEContadoresDeVitoria)
 function resetarPlacar() {
-    salvarEstadoAtual();
-    placarA = 0;
-    placarB = 0;
-    vitoriasA = 0;
-    vitoriasB = 0;
+    salvarEstadoAtual(); // Salva antes do reset para o undo
+    resetPlacarEContadoresDeVitoria(); // Apenas zera placar e contadores de vitória
     atualizarTela();
 }
 
+// `adicionarParticipante` (modificada para salvar o estado)
 function adicionarParticipante(tipoFila) {
     salvarEstadoAtual();
     let nomeInput;
@@ -494,10 +547,12 @@ function adicionarParticipante(tipoFila) {
         jogadoresTravados[nome] = false;
 
         nomeInput.value = "";
+        saveGameState(); // Salva o estado após adicionar participante
         atualizarTela();
     }
 }
 
+// `removerParticipante` (modificada para salvar o estado)
 function removerParticipante(tipoFila, index) {
     salvarEstadoAtual();
     let filaAlvo;
@@ -511,10 +566,11 @@ function removerParticipante(tipoFila, index) {
 
     const nomeRemovido = filaAlvo.splice(index, 1)[0];
     delete jogadoresTravados[nomeRemovido];
+    saveGameState(); // Salva o estado após remover participante
     atualizarTela();
 }
 
-
+// `editarParticipante` (modificada para salvar o estado)
 function editarParticipante(tipoFila, index, novoNome) {
     salvarEstadoAtual();
     novoNome = novoNome.trim();
@@ -578,9 +634,11 @@ function editarParticipante(tipoFila, index, novoNome) {
     timeA = timeA.map(j => j === nomeAntigo ? novoNome : j);
     timeB = timeB.map(j => j === nomeAntigo ? novoNome : j);
 
+    saveGameState(); // Salva o estado após editar participante
     atualizarTela();
 }
 
+// `embaralharFila` (modificada para salvar o estado)
 function embaralharFila(tipoFila) {
     salvarEstadoAtual();
     if (tipoFila === 'geral') {
@@ -588,9 +646,11 @@ function embaralharFila(tipoFila) {
     } else if (tipoFila === 'estrela') {
         shuffleArray(filaEstrela);
     }
+    saveGameState(); // Salva o estado após embaralhar
     atualizarTela();
 }
 
+// `atualizarRanking` (mantida)
 function atualizarRanking() {
     const todosJogadores = new Set([...Object.keys(jogadoresStats), ...filaGeral, ...filaEstrela, ...timeA, ...timeB]);
     const rankingArray = Array.from(todosJogadores)
@@ -598,32 +658,27 @@ function atualizarRanking() {
             if (!jogadoresStats[nome]) {
                 jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
             }
-            // Calculate the new score
-            const score = (jogadoresStats[nome].vitorias * 3) + jogadoresStats[nome].pontos;
-            return { nome: nome, stats: jogadoresStats[nome], score: score }; // Return an object for clarity
+            const score = (jogadoresStats[nome].vitorias * 5) - jogadoresStats[nome].derrotas + jogadoresStats[nome].pontos;
+            return { nome: nome, stats: jogadoresStats[nome], score: score };
         })
         .filter(entry => entry.stats.pontos > 0 || entry.stats.vitorias > 0 || entry.stats.derrotas > 0)
         .sort((a, b) => {
-            // Sort by Score (descending)
             if (b.score !== a.score) {
                 return b.score - a.score;
             }
-            // If scores are equal, sort by Victories (descending)
             if (b.stats.vitorias !== a.stats.vitorias) {
                 return b.stats.vitorias - a.stats.vitorias;
             }
-            // If victories are also equal, sort by Points (descending)
             if (b.stats.pontos !== a.stats.pontos) {
                 return b.stats.pontos - a.stats.pontos;
             }
-            // If points are also equal, sort by Losses (ascending - fewer losses is better)
             return a.stats.derrotas - b.stats.derrotas;
         });
 
     const rankingHTML = rankingArray.map((entry, index) => {
         const nome = entry.nome;
         const stats = entry.stats;
-        const score = entry.score; // Use the calculated score
+        const score = entry.score;
 
         return `
             <li class="flex items-center py-2 border-b border-gray-200 last:border-b-0">
@@ -640,7 +695,7 @@ function atualizarRanking() {
     document.getElementById("ranking").innerHTML = rankingHTML || '<li class="text-center text-gray-500 py-4">Nenhum ponto ou partida registrada ainda</li>';
 }
 
-
+// `atualizarStatusPartida` (mantida)
 function atualizarStatusPartida() {
     const statusEl = document.getElementById('statusPartida');
     const minPontos = pontosVitoria;
@@ -665,7 +720,6 @@ function atualizarStatusPartida() {
         displayStatus = true;
     }
 
-
     statusEl.innerHTML = statusText;
     if (displayStatus) {
         statusEl.classList.remove('hidden');
@@ -674,13 +728,17 @@ function atualizarStatusPartida() {
     }
 }
 
+// `toggleLock` (modificada para salvar o estado)
 function toggleLock(nomeJogador) {
     salvarEstadoAtual();
     jogadoresTravados[nomeJogador] = !jogadoresTravados[nomeJogador];
+    saveGameState(); // Salva o estado após travar/destravar
     atualizarTela();
 }
 
+// `atualizarTela` (modificada para controlar o botão "Formar Times" e desabilitar botões de ponto)
 function atualizarTela() {
+    // ... (renderização de timeA, timeB, filaGeral, filaEstrela, etc.) ...
     document.getElementById("timeA").innerHTML = timeA.map((j, i) => `
         <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
             <div class="flex items-center w-full">
@@ -755,11 +813,26 @@ function atualizarTela() {
         undoButton.disabled = historicoEstados.length === 0;
     }
 
+    // Lógica para o novo botão "Formar Times"
+    const formarTimesBtn = document.getElementById('formarTimesBtn');
+    // Seleciona todos os botões de ponto e vitória/reset para habilitar/desabilitar
+    const botoesPlacar = document.querySelectorAll('.quadra .flex.justify-center.gap-6 button, .quadra .botoes button'); 
+    
+    if (timeA.length === 0 && timeB.length === 0) {
+        formarTimesBtn.classList.remove('hidden'); // Mostra o botão "Formar Times"
+        botoesPlacar.forEach(btn => btn.disabled = true); // Desabilita botões de placar
+    } else {
+        formarTimesBtn.classList.add('hidden'); // Esconde o botão "Formar Times"
+        botoesPlacar.forEach(btn => btn.disabled = false); // Habilita botões de placar
+    }
+
     atualizarRanking();
     atualizarStatusPartida();
     setupSortableLists();
+    saveGameState(); // Salva o estado principal após cada atualização de tela
 }
 
+// `setupSortableLists` (mantida)
 function setupSortableLists() {
     const setupSortable = (ulElement, filaArray) => {
         if (ulElement.sortableInstance) {
@@ -777,6 +850,7 @@ function setupSortableLists() {
                     salvarEstadoAtual();
                     const [movedItem] = filaArray.splice(evt.oldIndex, 1);
                     filaArray.splice(evt.newIndex, 0, movedItem);
+                    saveGameState(); // Salva o estado após a reordenação
                     atualizarTela();
                 }
             }
@@ -786,11 +860,13 @@ function setupSortableLists() {
     setupSortable(document.getElementById('filaEstrela'), filaEstrela);
 }
 
+// `adicionarPontoAvulso` (mantida, mas com saveGameState)
 function adicionarPontoAvulso(time) {
     salvarEstadoAtual();
     if (time === 'A') placarA++;
     else if (time === 'B') placarB++;
 
+    saveGameState(); // Salva o estado após adicionar ponto avulso
     const vencedor = verificarVitoriaPartida();
     if (vencedor) {
         registrarVitoria(vencedor);
@@ -798,13 +874,16 @@ function adicionarPontoAvulso(time) {
     atualizarTela();
 }
 
+// `removerPontoAvulso` (mantida, mas com saveGameState)
 function removerPontoAvulso(time) {
     salvarEstadoAtual();
     if (time === 'A' && placarA > 0) placarA--;
     else if (time === 'B' && placarB > 0) placarB--;
+    saveGameState(); // Salva o estado após remover ponto avulso
     atualizarTela();
 }
 
+// `mostrarHistorico` (mantida)
 function mostrarHistorico() {
     const listaHistorico = document.getElementById('listaHistorico');
     listaHistorico.innerHTML = '';
@@ -837,7 +916,7 @@ function mostrarHistorico() {
                     </div>
                     <div class="flex flex-col items-center justify-center">
                         <div class="historico-placar flex items-center gap-2 text-xl font-bold">
-                            <span class="historico-placar-time px-3 py-1 rounded-md ${classePlacarVencedorA}">${partida.placarFinalA}</span>
+                            <span class="historico-placar-time px-3 py-1 rounded-md ${classePlacarVencedorA}">${partar.placarFinalA}</span>
                             <span class="historico-placar-vs text-gray-400">vs</span>
                             <span class="historico-placar-time px-3 py-1 rounded-md ${classePlacarVencedorB}">${partida.placarFinalB}</span>
                         </div>
@@ -860,10 +939,10 @@ function fecharHistorico() {
     document.getElementById('modalHistorico').classList.add('hidden');
 }
 
-carregarDadosIniciais();
-iniciarNovoJogo();
-historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
-atualizarTela();    
+// Chamadas iniciais ao carregar a página
+carregarDadosIniciais(); // Carrega as configurações do jogo
+loadGameState();        // Carrega o estado salvo ou inicializa filas/jogadores
+atualizarTela();        // Renderiza a interface inicial
 
 window.onclick = function(event) {
     if (event.target === document.getElementById('modalConfig')) {
