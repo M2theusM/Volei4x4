@@ -1,48 +1,48 @@
 /* Reset básico e fonte Inter */
 * {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Estilos customizados que não são facilmente substituídos por Tailwind */
 .settings-icon {
-  position: absolute;
-  right: 5px;
-  font-size: 24px;
-  background: none;
-  border: none;
-  padding: 5px;
-  cursor: pointer;
-  color: #4a5568; /* Cor do texto cinza escuro */
+    position: absolute;
+    right: 5px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    color: #4a5568; /* Cor do texto cinza escuro */
 }
 
 .modal-overlay {
-  background-color: rgba(0, 0, 0, 0.6); /* Fundo semi-transparente para modais */
+    background-color: rgba(0, 0, 0, 0.6); /* Fundo semi-transparente para modais */
 }
 
 .close-modal {
-  background: none;
-  border: none;
-  font-size: 28px;
-  cursor: pointer;
-  color: #999;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
 }
 
 /* Estilos específicos para a lista de histórico */
 #listaHistorico li {
-  border: 1px solid #ddd; /* Borda sutil */
-  border-radius: 8px; /* Cantos arredondados */
-  padding: 15px; /* Espaçamento interno */
-  margin-bottom: 15px; /* Espaçamento entre os itens */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra suave */
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    border: 1px solid #ddd; /* Borda sutil */
+    border-radius: 8px; /* Cantos arredondados */
+    padding: 15px; /* Espaçamento interno */
+    margin-bottom: 15px; /* Espaçamento entre os itens */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra suave */
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* Cores de fundo para o histórico de partidas com base no vencedor */
@@ -99,7 +99,7 @@ body {
 
 .locked input[type="text"] {
     background-color: #f0f0f0;
-    /* pointer-events: none;  Removido para permitir edição mesmo travado, se necessário no futuro, mas o input já está disabled */
+    /* pointer-events: none; Removido para permitir edição mesmo travado, se necessário no futuro, mas o input já está disabled */
 }
 
 .drag-handle {
@@ -111,8 +111,37 @@ body {
 
 /* Ajustes responsivos para telas menores */
 @media (max-width: 350px) {
-  h1 { font-size: 20px; }
-  h2 { font-size: 18px; }
-  button { font-size: 14px; padding: 8px 12px; }
-  .placar-pontos { font-size: 30px; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 18px; }
+    button { font-size: 14px; padding: 8px 12px; }
+    .placar-pontos { font-size: 30px; }
+}
+
+/* Adicionado para o ranking-header e alinhamento */
+.ranking-header {
+    display: flex;
+    align-items: center;
+}
+
+/* Ajusta o alinhamento do texto nos cabeçalhos das colunas */
+.ranking-header .ranking-pos,
+.ranking-header .ranking-score,
+.ranking-header .ranking-vitorias,
+.ranking-header .ranking-pontos, /* Alterado para refletir a nova ordem */
+.ranking-header .ranking-derrotas {
+    text-align: right;
+}
+
+.ranking-header .ranking-nome {
+    text-align: left;
+}
+
+/* Garante que os itens da lista do ranking sigam o mesmo alinhamento das colunas do cabeçalho */
+#ranking li .ranking-pos { text-align: center; }
+#ranking li .ranking-nome { text-align: left; }
+#ranking li .ranking-score,
+#ranking li .ranking-vitorias,
+#ranking li .ranking-pontos, /* Alterado para refletir a nova ordem */
+#ranking li .ranking-derrotas {
+    text-align: right;
 }
