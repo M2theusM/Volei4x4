@@ -640,6 +640,69 @@ function atualizarRanking() {
     document.getElementById("ranking").innerHTML = rankingHTML || '<li class="text-center text-gray-500 py-4">Nenhum ponto ou partida registrada ainda</li>';
 }
 
+// NOVA FUNÇÃO: Atualiza a seção de Destaques
+function atualizarDestaques() {
+    const todosJogadoresArray = Object.keys(jogadoresStats).map(nome => {
+        return {
+            nome: nome,
+            stats: jogadoresStats[nome],
+            score: (jogadoresStats[nome].vitorias * 3) + jogadoresStats[nome].pontos,
+            isEstrela: estrelasRegistradas.includes(nome)
+        };
+    }).filter(player => player.stats.pontos > 0 || player.stats.vitorias > 0 || player.stats.derrotas > 0); // Apenas jogadores que já jogaram
+
+    const jogadoresGerais = todosJogadoresArray.filter(player => !player.isEstrela);
+    const jogadoresEstrela = todosJogadoresArray.filter(player => player.isEstrela);
+
+    const getDestaque = (arr, type) => {
+        if (arr.length === 0) return { nome: 'N/A', valor: 'N/A' };
+
+        let destaque = arr[0];
+        arr.forEach(player => {
+            if (type === 'score') {
+                if (player.score > destaque.score) destaque = player;
+            } else if (type === 'pontos') {
+                if (player.stats.pontos > destaque.stats.pontos) destaque = player;
+            } else if (type === 'vitorias') {
+                if (player.stats.vitorias > destaque.stats.vitorias) destaque = player;
+            } else if (type === 'derrotas') {
+                // Menos derrotas
+                if (player.stats.derrotas < destaque.stats.derrotas) destaque = player;
+            }
+        });
+        
+        let valor;
+        if (type === 'score') valor = destaque.score;
+        else if (type === 'pontos') valor = destaque.stats.pontos;
+        else if (type === 'vitorias') valor = destaque.stats.vitorias;
+        else if (type === 'derrotas') valor = destaque.stats.derrotas;
+        
+        return { nome: destaque.nome, valor: valor };
+    };
+
+    // Destaques Fila Geral
+    const geralMelhorScore = getDestaque(jogadoresGerais, 'score');
+    const geralMaisPontos = getDestaque(jogadoresGerais, 'pontos');
+    const geralMaisVitorias = getDestaque(jogadoresGerais, 'vitorias');
+    const geralMenosDerrotas = getDestaque(jogadoresGerais, 'derrotas');
+
+    document.getElementById('destaqueGeralScore').innerText = `${geralMelhorScore.nome} (${geralMelhorScore.valor})`;
+    document.getElementById('destaqueGeralPontos').innerText = `${geralMaisPontos.nome} (${geralMaisPontos.valor})`;
+    document.getElementById('destaqueGeralVitorias').innerText = `${geralMaisVitorias.nome} (${geralMaisVitorias.valor})`;
+    document.getElementById('destaqueGeralDerrotas').innerText = `${geralMenosDerrotas.nome} (${geralMenosDerrotas.valor})`;
+
+    // Destaques Fila Estrela
+    const estrelaMelhorScore = getDestaque(jogadoresEstrela, 'score');
+    const estrelaMaisPontos = getDestaque(jogadoresEstrela, 'pontos');
+    const estrelaMaisVitorias = getDestaque(jogadoresEstrela, 'vitorias');
+    const estrelaMenosDerrotas = getDestaque(jogadoresEstrela, 'derrotas');
+
+    document.getElementById('destaqueEstrelaScore').innerText = `${estrelaMelhorScore.nome} (${estrelaMelhorScore.valor})`;
+    document.getElementById('destaqueEstrelaPontos').innerText = `${estrelaMaisPontos.nome} (${estrelaMaisPontos.valor})`;
+    document.getElementById('destaqueEstrelaVitorias').innerText = `${estrelaMaisVitorias.nome} (${estrelaMaisVitorias.valor})`;
+    document.getElementById('destaqueEstrelaDerrotas').innerText = `${estrelaMenosDerrotas.nome} (${estrelaMenosDerrotas.valor})`;
+}
+
 
 function atualizarStatusPartida() {
     const statusEl = document.getElementById('statusPartida');
@@ -756,6 +819,7 @@ function atualizarTela() {
     }
 
     atualizarRanking();
+    atualizarDestaques(); // Chamada para a nova função
     atualizarStatusPartida();
     setupSortableLists();
 }

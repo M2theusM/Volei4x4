@@ -140,8 +140,54 @@
             <ul id="ranking" class="space-y-2"></ul>
         </div>
 
-        <button onclick="mostrarHistorico()" class="mt-5 w-full px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75">Ver Histórico de Partidas</button>
+        <div class="destaques bg-white p-6 rounded-xl shadow-lg mt-5">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Destaques da Noite</h2>
+    <div class="flex flex-col md:flex-row justify-around gap-6">
+        <div class="flex-1 bg-gray-50 p-4 rounded-lg shadow-inner">
+            <h3 class="text-xl font-semibold text-gray-700 mb-3 text-center">🎖️</h3>
+            <ul class="space-y-4"> <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">🔥 Melhor pontuação:</span>
+                    <span id="destaqueGeralScore" class="font-semibold text-lg">N/A</span>
+                </li>
+                <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">🚀 Mais pontos feitos:</span>
+                    <span id="destaqueGeralPontos" class="font-semibold text-lg">N/A</span>
+                </li>
+                <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">👑 Mais vitórias:</span>
+                    <span id="destaqueGeralVitorias" class="font-semibold text-lg">N/A</span>
+                </li>
+                <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">🛡️ Menos derrotas:</span>
+                    <span id="destaqueGeralDerrotas" class="font-semibold text-lg">N/A</span>
+                </li>
+            </ul>
+        </div>
+        <div class="flex-1 bg-gray-50 p-4 rounded-lg shadow-inner">
+            <h3 class="text-xl font-semibold text-gray-700 mb-3 text-center">🌟</h3>
+            <ul class="space-y-4"> <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">🔥 Melhor pontuação:</span>
+                    <span id="destaqueEstrelaScore" class="font-semibold text-lg">N/A</span>
+                </li>
+                <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">🚀 Mais pontos feitos:</span>
+                    <span id="destaqueEstrelaPontos" class="font-semibold text-lg">N/A</span>
+                </li>
+                <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">👑 Mais vitórias:</span>
+                    <span id="destaqueEstrelaVitorias" class="font-semibold text-lg">N/A</span>
+                </li>
+                <li class="flex flex-col items-start text-gray-700">
+                    <span class="text-base">🛡️ Menos derrotas:</span>
+                    <span id="destaqueEstrelaDerrotas" class="font-semibold text-lg">N/A</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
 
+        <button onclick="mostrarHistorico()" class="mt-5 w-full px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75">Ver Histórico de Partidas</button>
+     
         <div id="modalHistorico" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
             <div class="modal-content bg-white p-8 rounded-xl shadow-2xl relative w-11/12 max-w-lg mx-auto">
                 <span onclick="fecharHistorico()" class="close-button absolute top-4 right-6 text-gray-500 text-4xl font-bold cursor-pointer hover:text-gray-800 transition-colors duration-200">&times;</span>
@@ -151,8 +197,8 @@
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+        
+	<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <script src="scripts.js"></script>
 </body>
 </html>
