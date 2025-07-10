@@ -50,16 +50,19 @@
             </div>
             <div class="config-group mb-6">
                 <label for="maxVitoriasConsecutivas" class="block mb-2 font-medium text-gray-700">🔁 Máximo de vitórias consecutivas:</label>
-                <input type="number" id="maxVitoriasConsecutivas" min="1" value="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                <input type="number" id="maxVitoriasConsecutivas" min="1" max="7" value="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
                 <div class="info-text text-sm text-gray-600 mt-1">Número de vitórias seguidas para um time ser desfeito.</div>
+            </div>        
+			<button onclick="salvarConfiguracoes()" class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Salvar</button>
+            <button onclick="redefinirTudo()" class="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 mt-3">Limpar dados</button>
             </div>
-            <button onclick="salvarConfiguracoes()" class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Salvar</button>
-        </div>
+		</div>  
+		
     </div>
 
     <div class="container flex flex-col gap-5 max-w-xl w-full mx-auto">
         <div class="quadra bg-white p-6 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Em Quadra</h2>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Placar</h2>
             <div class="placar flex justify-around items-center py-5 bg-gray-50 rounded-lg shadow-inner mb-4">
                 <div class="placar-time text-center">
                     <div class="placar-time-nome text-lg text-gray-700 mb-1">TIME A</div>
@@ -92,6 +95,25 @@
                     <div class="vitorias-container text-center text-sm text-gray-600 mb-2">Vitórias: <span id="vitoriasB">0</span></div>
                     <ul id="timeB" class="space-y-2"></ul>
                 </div>
+            </div>
+
+            <div id="selecaoInicialTimes" class="bg-gray-100 p-4 rounded-lg shadow-inner mt-4 hidden">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3 text-center">Definir times iniciais</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-bold text-green-700 mb-2 text-center">Time A</h4>
+                        <div id="selectsTimeA" class="space-y-2">
+                            </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-blue-700 mb-2 text-center">Time B</h4>
+                        <div id="selectsTimeB" class="space-y-2">
+                            </div>
+                    </div>
+                </div>
+                <button onclick="preencherTimesManualmente()" class="w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors mt-4">
+                    Confirmar Times em Quadra
+                </button>
             </div>
             <div class="botoes flex flex-wrap justify-center gap-3 mt-6">
                 <button onclick="registrarVitoria('A')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time A Venceu</button>
