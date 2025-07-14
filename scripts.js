@@ -91,29 +91,40 @@ function carregarDadosIniciais() {
     const savedJogadoresStats = localStorage.getItem('jogadoresStats');
     if (savedJogadoresStats) {
         jogadoresStats = JSON.parse(savedJogadoresStats);
+    } else {
+        jogadoresStats = {}; // Garante que seja um objeto vazio se não houver dados salvos
     }
+
     const savedJogadoresTravados = localStorage.getItem('jogadoresTravados');
     if (savedJogadoresTravados) {
         jogadoresTravados = JSON.parse(savedJogadoresTravados);
+    } else {
+        jogadoresTravados = {}; // Garante que seja um objeto vazio se não houver dados salvos
     }
+    
     // Carregar estrelasRegistradas
     const savedEstrelasRegistradas = localStorage.getItem('estrelasRegistradas');
     if (savedEstrelasRegistradas) {
         estrelasRegistradas = JSON.parse(savedEstrelasRegistradas);
+    } else {
+        estrelasRegistradas = []; // Garante que seja um array vazio se não houver dados salvos
     }
 
     // Carregar filas se existirem (para que não se percam ao recarregar a página)
     const savedFilaGeral = localStorage.getItem('filaGeral');
     if (savedFilaGeral) {
         filaGeral = JSON.parse(savedFilaGeral);
+    } else {
+        filaGeral = []; // Garante que seja um array vazio se não houver dados salvos
     }
     const savedFilaEstrela = localStorage.getItem('filaEstrela');
     if (savedFilaEstrela) {
         filaEstrela = JSON.parse(savedFilaEstrela);
+    } else {
+        filaEstrela = []; // Garante que seja um array vazio se não houver dados salvos
     }
 }
 
-// Função para salvar as configurações
 function salvarConfiguracoes() {
     const novosPontosVitoria = parseInt(document.getElementById('pontosPartida').value);
     const novoTipoDesempate = document.getElementById('tipoDesempate').value;
@@ -121,9 +132,14 @@ function salvarConfiguracoes() {
     const novosJogadoresPorTime = parseInt(document.getElementById('jogadoresPorTime').value);
     const novoMaxVitoriasConsecutivas = parseInt(document.getElementById('maxVitoriasConsecutivas').value);
 
+    // Salvar as configurações antigas para comparar se jogadoresPorTime ou estrelasPorTime mudaram
+    const oldJogadoresPorTime = jogadoresPorTime;
+    const oldEstrelasPorTime = estrelasPorTime;
+
+
     if (novosPontosVitoria > 0 && novasEstrelasPorTime >= 0 && novosJogadoresPorTime >= 2 && novosJogadoresPorTime <= 6 && novoMaxVitoriasConsecutivas >= 1 && novoMaxVitoriasConsecutivas <= 7) {
         if (novasEstrelasPorTime > novosJogadoresPorTime) {
-            alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Mín. estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: entre 1 e 7.");
+            alert("O número mínimo de estrelas por time não pode ser maior que o total de jogadores por time.");
             return;
         }
 
@@ -140,10 +156,148 @@ function salvarConfiguracoes() {
         localStorage.setItem('maxVitoriasConsecutivas', maxVitoriasConsecutivas);
 
         fecharConfiguracoes();
-        atualizarTela();
+
+        // NOVO: Verificar se a quantidade de jogadores/estrelas por time mudou e recompor
+        if (oldJogadoresPorTime !== jogadoresPorTime || oldEstrelasPorTime !== estrelasPorTime) {
+            recomporTimesAposConfiguracao();
+        } else {
+            // Se apenas outras configs mudaram (ex: pontosVitoria), só atualiza a tela
+            atualizarTela();
+        }
     } else {
-        alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Mín. estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: maior que 0.");
+        alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Mín. estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: entre 1 e 7.");
     }
+}
+
+// NOVO: Função para recompor os times imediatamente após a mudança de configuração
+function recomporTimesAposConfiguracao() {
+    salvarEstadoAtual(); // Salva o estado atual antes de recompor
+
+    let todosJogadoresEmCampo = [...timeA, ...timeB];
+    let estrelasEmCampo = todosJogadoresEmCampo.filter(j => estrelasRegistradas.includes(j));
+    let geraisEmCampo = todosJogadoresEmCampo.filter(j => !estrelasRegistradas.includes(j));
+
+    // Resetar times para reconstruir
+    timeA = [];
+    timeB = [];
+
+    const jogadoresNecessariosPorTime = jogadoresPorTime;
+    const estrelasNecessariasPorTime = estrelasPorTime;
+
+    // ----- Recompor Time A -----
+    // Priorizar estrelas existentes
+    let estrelasParaTimeA = estrelasEmCampo.splice(0, estrelasNecessariasPorTime);
+    timeA.push(...estrelasParaTimeA);
+
+    // Priorizar gerais existentes
+    let geraisParaTimeA = geraisEmCampo.splice(0, jogadoresNecessariosPorTime - timeA.length);
+    timeA.push(...geraisParaTimeA);
+
+    // Adicionar da fila geral/estrela se necessário (para Time A)
+    while (timeA.length < jogadoresNecessariosPorTime) {
+        if (timeA.filter(j => estrelasRegistradas.includes(j)).length < estrelasNecessariasPorTime) {
+            // Tenta pegar estrela da fila Estrela
+            const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+            if (estrelaDisponivel) {
+                timeA.push(estrelaDisponivel);
+                filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+            } else {
+                // Se não há estrelas disponíveis na fila, tenta da fila geral se permitido pelas regras
+                const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+                if (geralDisponivel) {
+                     timeA.push(geralDisponivel);
+                     filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+                } else {
+                    break; // Não há jogadores disponíveis
+                }
+            }
+        } else {
+            // Tenta pegar geral da fila Geral
+            const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+            if (geralDisponivel) {
+                timeA.push(geralDisponivel);
+                filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+            } else {
+                 // Tenta pegar estrela da fila estrela, se for para preencher vaga geral
+                const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+                if (estrelaDisponivel) {
+                    timeA.push(estrelaDisponivel);
+                    filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+                } else {
+                    break; // Não há jogadores disponíveis
+                }
+            }
+        }
+    }
+
+
+    // ----- Recompor Time B ----- (Lógica similar para Time B)
+    // Priorizar estrelas e gerais que sobraram do campo
+    let estrelasParaTimeB = estrelasEmCampo.splice(0, estrelasNecessariasPorTime); // Estrelas que sobraram de estrelasEmCampo
+    timeB.push(...estrelasParaTimeB);
+
+    let geraisParaTimeB = geraisEmCampo.splice(0, jogadoresNecessariosPorTime - timeB.length); // Gerais que sobraram de geraisEmCampo
+    timeB.push(...geraisParaTimeB);
+    
+    while (timeB.length < jogadoresNecessariosPorTime) {
+        if (timeB.filter(j => estrelasRegistradas.includes(j)).length < estrelasNecessariasPorTime) {
+            const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+            if (estrelaDisponivel) {
+                timeB.push(estrelaDisponivel);
+                filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+            } else {
+                const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+                if (geralDisponivel) {
+                     timeB.push(geralDisponivel);
+                     filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+                } else {
+                    break;
+                }
+            }
+        } else {
+            const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+            if (geralDisponivel) {
+                timeB.push(geralDisponivel);
+                filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+            } else {
+                 const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+                if (estrelaDisponivel) {
+                    timeB.push(estrelaDisponivel);
+                    filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Jogadores que sobraram dos "em campo" originais e não foram realocados para timeA/B voltam para as filas
+    // IMPORTANTE: estrelasEmCampo e geraisEmCampo agora contêm os jogadores que não foram realocados.
+    const jogadoresSobrandoDoCampo = [...estrelasEmCampo, ...geraisEmCampo];
+    jogadoresSobrandoDoCampo.forEach(j => {
+        if (estrelasRegistradas.includes(j)) {
+            filaEstrela.push(j);
+        } else {
+            filaGeral.push(j);
+        }
+        // Garante que jogadores que voltam para a fila ficam destravados por padrão se não têm estado
+        if (jogadoresTravados[j] === undefined) {
+            jogadoresTravados[j] = false; 
+        }
+    });
+
+    // Garante que jogadores em campo estão destravados
+    timeA.forEach(j => jogadoresTravados[j] = false);
+    timeB.forEach(j => jogadoresTravados[j] = false);
+
+    // Salvar todos os estados atualizados
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+
+    atualizarTela();
 }
 
 function abrirConfiguracoes() {
@@ -174,7 +328,7 @@ function iniciarNovoJogo() {
     vitoriasB = 0;
     placarA = 0;
     placarB = 0;
-    // Nao resetar jogadoresStats e jogadoresTravados aqui,
+    // Não resetar jogadoresStats e jogadoresTravados aqui,
     // eles serão carregados do localStorage em carregarDadosIniciais()
     // e modificados dinamicamente.
 
@@ -195,16 +349,21 @@ function iniciarNovoJogo() {
             localStorage.setItem('primeiraInicializacaoAlertExibido', 'true');
         }
         
-        // Inicializa todos os jogadores conhecidos (incluindo os recém-adicionados se for o caso)
-        // com o estado de travado como FALSE para permitir seleção manual.
+        // Inicializa todos os jogadores conhecidos com o estado de travado como FALSE (destravado) por padrão
+        // para permitir seleção manual.
         const allKnownPlayers = new Set([...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
         allKnownPlayers.forEach(nome => {
             if (!jogadoresStats[nome]) {
                 jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
             }
-            // Sempre começa destravado no primeiro acesso para seleção manual
-            jogadoresTravados[nome] = false; 
+            // Define como destravado se não tiver estado, mas não força se já existe
+            if (jogadoresTravados[nome] === undefined) {
+                jogadoresTravados[nome] = false; 
+            }
         });
+        // Salvar o estado inicial de jogadoresStats e jogadoresTravados
+        localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+        localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
 
         atualizarTela(); // Apenas atualiza a tela para mostrar filas e selects
         return; // Sai da função, a formação automática será feita pela `preencherTimesManualmente`
@@ -225,7 +384,7 @@ function iniciarNovoJogo() {
         }
         // Se o jogador não está em jogadoresTravados, assume destravado por padrão
         if (jogadoresTravados[nome] === undefined) {
-             jogadoresTravados[nome] = false;
+             jogadoresTravados[nome] = false; // Assume destravado por padrão
         }
     });
 
@@ -261,9 +420,11 @@ function iniciarNovoJogo() {
     filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
     filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
     
-    // Garante que jogadores em campo estão destravados e salva
+    // Garante que jogadores em campo estão destravados
     timeA.forEach(j => jogadoresTravados[j] = false);
     timeB.forEach(j => jogadoresTravados[j] = false);
+    
+    // NOVO: Salva jogadoresTravados após formação automática dos times.
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
@@ -341,20 +502,19 @@ function preencherTimesManualmente() {
     localStorage.setItem('primeiraInicializacaoConcluida', 'true');
     localStorage.removeItem('primeiraInicializacaoAlertExibido'); // Remove o alerta de primeira inicialização
 
-    // Definir estado de travado para os jogadores e salvar
+    // Apenas garante que os jogadores em campo estão destravados.
+    // Os demais (nas filas) manterão seu estado de travamento conforme foi configurado manualmente.
     const allKnownPlayers = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
     allKnownPlayers.forEach(nome => {
+        if (!jogadoresStats[nome]) {
+             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
         if (timeA.includes(nome) || timeB.includes(nome)) {
             jogadoresTravados[nome] = false; // Destrava quem está em campo
-        } else {
-            // Se o jogador não foi para o campo, mantém o estado travado/destravado que ele tinha
-            // ou trava por padrão se nao tinha um estado (novo jogador).
-            if (jogadoresTravados[nome] === undefined) {
-                jogadoresTravados[nome] = true; // Trava por padrão se nunca foi definido
-            }
-        }
-        if (!jogadoresStats[nome]) { // Garante que stats existam para todos os jogadores
-             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        } 
+        // Se o jogador não foi para o campo, e não tem estado definido, define como destravado (false) por padrão.
+        else if (jogadoresTravados[nome] === undefined) {
+            jogadoresTravados[nome] = false; // Default: destravado
         }
     });
 
@@ -434,26 +594,14 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
         filaGeral.push(jogadorParaSair);
     }
     
-    // Atualiza o estado de travado para os jogadores envolvidos na troca e salva
-    jogadoresTravados[jogadorParaEntrar] = false; // O que entra sempre destravado
-    // O jogador que sai da quadra para a fila deve manter o seu estado de travado/destravado que ele tinha
-    // ANTES de entrar no campo. Como isso não é rastreado aqui, ele voltará travado por padrão
-    // se não for explicitamente definido para 'false' por `toggleLock`.
-    // A remoção da linha 'jogadoresTravados[j] = true;' em registrarVitoria já ajuda,
-    // mas aqui na troca, o jogador que sai deve ser considerado travado ao ir para a fila,
-    // a menos que ele tenha sido destravado manualmente na fila ANTES.
-    // Para simplificar e ir com o pedido anterior, ele volta travado se não estava em campo.
-    if (!timeA.includes(jogadorParaSair) && !timeB.includes(jogadorParaSair)) { // Se ele não voltou para outro time
-        // Aqui, a lógica é que o jogador que sai da quadra *vai para a fila*, e na fila, por padrão, ele pode ficar travado
-        // A menos que o usuário o destrave. Então, pode-se manter o estado anterior dele se houver, ou travá-lo.
-        // Para manter o estado anterior de travado/destravado de quem sai da quadra:
-        // Não fazemos nada aqui, ele manterá o estado que já tinha em jogadoresTravados.
-        // O importante é que ele NÃO seja forçado a 'true' ou 'false' se já tinha um estado.
-        // Apenas para garantir que não haja undefined:
-        if (jogadoresTravados[jogadorParaSair] === undefined) {
-             jogadoresTravados[jogadorParaSair] = true; // Se não tinha estado, trava ao ir pra fila
-        }
+    // Garante que o jogador que entra na quadra está destravado.
+    jogadoresTravados[jogadorParaEntrar] = false; 
+    
+    // O jogador que sai deve manter seu estado de travamento que tinha antes.
+    if (jogadoresTravados[jogadorParaSair] === undefined) {
+        jogadoresTravados[jogadorParaSair] = false; // Default: destravado
     }
+
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); // Salva o estado atual
 
     atualizarTela();
@@ -523,7 +671,8 @@ function marcarPonto(time, jogador) {
     if (vencedor) {
         registrarVitoria(vencedor);
     }
-    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); // Salva stats após ponto
+    // Salva jogadoresStats após cada ponto para persistência imediata
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
 }
 
@@ -558,14 +707,17 @@ function registrarVitoria(vencedor) {
         });
     }
 
+    // NOVO: Adiciona o registro no histórico de partidas ANTES de redefinir timeA/timeB
     historicoPartidas.unshift({
-        timeA: [...timeA],
-        timeB: [...timeB],
+        timeA: [...timeA], // Clona arrays para o histórico
+        timeB: [...timeB], // Clona arrays para o histórico
         placarFinalA: placarA,
         placarFinalB: placarB,
         vencedor: vencedor === 'ambosSaem' ? 'Empate/Ambos Saíram' : `Time ${vencedor}`,
         data: new Date().toLocaleString('pt-BR')
     });
+    // NOVO: Salva o histórico de partidas no localStorage
+    // localStorage.setItem('historicoPartidas', JSON.stringify(historicoPartidas)); // Se quiser persistir o histórico
 
     // Marcar primeiraInicializacaoConcluida como true após a primeira vitória
     if (!primeiraInicializacaoConcluida) {
@@ -591,9 +743,12 @@ function registrarVitoria(vencedor) {
     }
 
     shuffleArray(jogadoresParaFila);
-    // Adiciona jogadores de volta às filas. O estado de travamento será mantido
-    // pela persistência e atualização na função 'atualizarTela' ou 'toggleLock'.
+    // Ao adicionar jogadores de volta às filas, garanta que seu estado existente seja mantido.
+    // Se o jogador não tem um estado definido ainda, ele será destravado por padrão (false).
     jogadoresParaFila.forEach(j => {
+        if (jogadoresTravados[j] === undefined) {
+             jogadoresTravados[j] = false; // Se nunca foi definido, assume destravado ao ir para a fila
+        }
         if (estrelasRegistradas.includes(j)) {
             filaEstrela.push(j);
         } else {
@@ -666,9 +821,29 @@ function registrarVitoria(vencedor) {
     placarA = 0;
     placarB = 0;
 
-    // NOVO/REVISADO: Salva o estado FINAL de todos os jogadores (stats, travados, filas, estrelas)
+    // NOVO: Salvamento explícito e final de TODOS os estados relevantes após uma vitória.
+    // Isso garante que os dados atualizados sejam persistidos antes da próxima atualização de tela ou recarga.
+    // Garante que o estado de travados de TODOS os jogadores conhecidos seja salvo.
+    const allKnownPlayersAfterVictory = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
+    allKnownPlayersAfterVictory.forEach(nome => {
+        if (!jogadoresStats[nome]) {
+             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        // Se o jogador está em campo, ele DEVE estar destravado.
+        if (timeA.includes(nome) || timeB.includes(nome)) {
+            jogadoresTravados[nome] = false;
+        } 
+        // Se o jogador NÃO está em campo (ou seja, está nas filas)
+        // E ele não tem um estado 'jogadoresTravados' definido (é um jogador novo ou resetado sem estado)
+        // Então o travamos por padrão.
+        else if (jogadoresTravados[nome] === undefined) {
+            jogadoresTravados[nome] = false; // Mantenha como destravado por padrão se não tem estado e não está em campo
+        }
+        // Se já tinha um estado (true/false) e não está em campo, mantém esse estado.
+    });
+
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
-    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); // Salva o estado atualizado
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
@@ -751,7 +926,7 @@ function removerParticipante(tipoFila, index) {
     }
 
     const nomeRemovido = filaAlvo.splice(index, 1)[0];
-    delete jogadoresTravados[nomeRemovido];
+    delete jogadoresTravados[nomeRemovido]; // Remove do controle de travados
     delete jogadoresStats[nomeRemovido]; // Opcional: remover stats ao remover da fila
     
     // Remover também de estrelasRegistradas se for o caso
@@ -832,7 +1007,7 @@ function editarParticipante(tipoFila, index, novoNome) {
         jogadoresTravados[novoNome] = jogadoresTravados[nomeAntigo];
         delete jogadoresTravados[nomeAntigo];
     } else {
-        jogadoresTravados[novoNome] = false;
+        jogadoresTravados[novoNome] = false; // Default: destravado para novo nome se não tinha histórico
     }
 
     timeA = timeA.map(j => j === nomeAntigo ? novoNome : j);
@@ -907,6 +1082,46 @@ function atualizarRanking() {
 }
 
 // NOVA FUNÇÃO: Atualiza a seção de Destaques
+const getDestaque = (arr, type) => {
+    if (arr.length === 0) return { nomes: ['N/A'], valor: 'N/A' }; // Retorna um array de nomes
+
+    let valorDestaque;
+    if (type === 'derrotas') { // Para derrotas, queremos o valor MÍNIMO
+        valorDestaque = Infinity; // Começa com um valor alto para encontrar o mínimo
+        arr.forEach(player => {
+            if (player.stats.derrotas < valorDestaque) {
+                valorDestaque = player.stats.derrotas;
+            }
+        });
+    } else { // Para score, pontos e vitórias, queremos o valor MÁXIMO
+        valorDestaque = -Infinity; // Começa com um valor baixo para encontrar o máximo
+        arr.forEach(player => {
+            if (type === 'score' && player.score > valorDestaque) {
+                valorDestaque = player.score;
+            } else if (type === 'pontos' && player.stats.pontos > valorDestaque) {
+                valorDestaque = player.stats.pontos;
+            } else if (type === 'vitorias' && player.stats.vitorias > valorDestaque) {
+                valorDestaque = player.stats.vitorias;
+            }
+        });
+    }
+
+    // Agora, colete TODOS os jogadores que têm esse valor de destaque
+    const destaquesEncontrados = arr.filter(player => {
+        if (type === 'score') return player.score === valorDestaque;
+        if (type === 'pontos') return player.stats.pontos === valorDestaque;
+        if (type === 'vitorias') return player.stats.vitorias === valorDestaque;
+        if (type === 'derrotas') return player.stats.derrotas === valorDestaque;
+        return false;
+    });
+
+    // Mapeia para pegar apenas os nomes
+    const nomesDestaque = destaquesEncontrados.map(player => player.nome);
+
+    // Retorna um objeto com o array de nomes e o valor
+    return { nomes: nomesDestaque.length > 0 ? nomesDestaque : ['N/A'], valor: valorDestaque !== -Infinity && valorDestaque !== Infinity ? valorDestaque : 'N/A' };
+};
+
 function atualizarDestaques() {
     const todosJogadoresArray = Object.keys(jogadoresStats).map(nome => {
         return {
@@ -920,42 +1135,17 @@ function atualizarDestaques() {
     const jogadoresGerais = todosJogadoresArray.filter(player => !player.isEstrela);
     const jogadoresEstrela = todosJogadoresArray.filter(player => player.isEstrela);
 
-    const getDestaque = (arr, type) => {
-        if (arr.length === 0) return { nome: 'N/A', valor: 'N/A' };
-
-        let destaque = arr[0];
-        arr.forEach(player => {
-            if (type === 'score') {
-                if (player.score > destaque.score) destaque = player;
-            } else if (type === 'pontos') {
-                if (player.stats.pontos > destaque.stats.pontos) destaque = player;
-            } else if (type === 'vitorias') {
-                if (player.stats.vitorias > destaque.stats.vitorias) destaque = player;
-            } else if (type === 'derrotas') {
-                // Menos derrotas
-                if (player.stats.derrotas < destaque.stats.derrotas) destaque = player;
-            }
-        });
-        
-        let valor;
-        if (type === 'score') valor = destaque.score;
-        else if (type === 'pontos') valor = destaque.stats.pontos;
-        else if (type === 'vitorias') valor = destaque.stats.vitorias;
-        else if (type === 'derrotas') valor = destaque.stats.derrotas;
-        
-        return { nome: destaque.nome, valor: valor };
-    };
-
     // Destaques Fila Geral
     const geralMelhorScore = getDestaque(jogadoresGerais, 'score');
     const geralMaisPontos = getDestaque(jogadoresGerais, 'pontos');
     const geralMaisVitorias = getDestaque(jogadoresGerais, 'vitorias');
     const geralMenosDerrotas = getDestaque(jogadoresGerais, 'derrotas');
 
-    document.getElementById('destaqueGeralScore').innerText = `${geralMelhorScore.nome} (${geralMelhorScore.valor})`;
-    document.getElementById('destaqueGeralPontos').innerText = `${geralMaisPontos.nome} (${geralMaisPontos.valor})`;
-    document.getElementById('destaqueGeralVitorias').innerText = `${geralMaisVitorias.nome} (${geralMaisVitorias.valor})`;
-    document.getElementById('destaqueGeralDerrotas').innerText = `${geralMenosDerrotas.nome} (${geralMenosDerrotas.valor})`;
+    // Use .join(', ') para listar múltiplos nomes, se houver
+    document.getElementById('destaqueGeralScore').innerText = `${geralMelhorScore.nomes.join(', ')} (${geralMelhorScore.valor})`;
+    document.getElementById('destaqueGeralPontos').innerText = `${geralMaisPontos.nomes.join(', ')} (${geralMaisPontos.valor})`;
+    document.getElementById('destaqueGeralVitorias').innerText = `${geralMaisVitorias.nomes.join(', ')} (${geralMaisVitorias.valor})`;
+    document.getElementById('destaqueGeralDerrotas').innerText = `${geralMenosDerrotas.nomes.join(', ')} (${geralMenosDerrotas.valor})`;
 
     // Destaques Fila Estrela
     const estrelaMelhorScore = getDestaque(jogadoresEstrela, 'score');
@@ -963,10 +1153,11 @@ function atualizarDestaques() {
     const estrelaMaisVitorias = getDestaque(jogadoresEstrela, 'vitorias');
     const estrelaMenosDerrotas = getDestaque(jogadoresEstrela, 'derrotas');
 
-    document.getElementById('destaqueEstrelaScore').innerText = `${estrelaMelhorScore.nome} (${estrelaMelhorScore.valor})`;
-    document.getElementById('destaqueEstrelaPontos').innerText = `${estrelaMaisPontos.nome} (${estrelaMaisPontos.valor})`;
-    document.getElementById('destaqueEstrelaVitorias').innerText = `${estrelaMaisVitorias.nome} (${estrelaMaisVitorias.valor})`;
-    document.getElementById('destaqueEstrelaDerrotas').innerText = `${estrelaMenosDerrotas.nome} (${estrelaMenosDerrotas.valor})`;
+    // Use .join(', ') para listar múltiplos nomes, se houver
+    document.getElementById('destaqueEstrelaScore').innerText = `${estrelaMelhorScore.nomes.join(', ')} (${estrelaMelhorScore.valor})`;
+    document.getElementById('destaqueEstrelaPontos').innerText = `${estrelaMaisPontos.nomes.join(', ')} (${estrelaMaisPontos.valor})`;
+    document.getElementById('destaqueEstrelaVitorias').innerText = `${estrelaMaisVitorias.nomes.join(', ')} (${estrelaMaisVitorias.valor})`;
+    document.getElementById('destaqueEstrelaDerrotas').innerText = `${estrelaMenosDerrotas.nomes.join(', ')} (${estrelaMenosDerrotas.valor})`;
 }
 
 
@@ -1008,7 +1199,7 @@ function toggleLock(nomeJogador) {
     salvarEstadoAtual();
     jogadoresTravados[nomeJogador] = !jogadoresTravados[nomeJogador];
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); // Salva após a alteração
-    atualizarTela();
+    atualizarTela(); // Recarrega a tela para refletir a mudança visualmente
 }
 
 function atualizarTela() {
@@ -1150,9 +1341,9 @@ function atualizarTela() {
 
     document.getElementById("filaGeral").innerHTML = filaGeral.map((j, i) => `
         <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
-            <span class="drag-handle text-gray-400 mr-2">☰</span>
+            <span class="drag-handle text-gray-400 mr-2 ${jogadoresTravados[j] ? 'cursor-not-allowed opacity-50' : 'cursor-grab'}">☰</span>
             <span class="w-8 text-center text-gray-600">${i + 1}.</span>
-            <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('geral', ${i}, this.value)" ${jogadoresTravados[j] ? 'disabled' : ''} class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
+            <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('geral', ${i}, this.value)" class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
             <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
                 ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
             </span>
@@ -1162,9 +1353,9 @@ function atualizarTela() {
 
     document.getElementById("filaEstrela").innerHTML = filaEstrela.map((j, i) => `
         <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
-            <span class="drag-handle text-gray-400 mr-2">☰</span>
+            <span class="drag-handle text-gray-400 mr-2 ${jogadoresTravados[j] ? 'cursor-not-allowed opacity-50' : 'cursor-grab'}">☰</span>
             <span class="w-8 text-center text-gray-600">${i + 1}.</span>
-            <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('estrela', ${i}, this.value)" ${jogadoresTravados[j] ? 'disabled' : ''} class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
+            <input type="text" value="${j.replace(/"/g, "&quot;")}" onchange="editarParticipante('estrela', ${i}, this.value)" class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mr-2 ${jogadoresTravados[j] ? 'bg-gray-200' : ''}"/>
             <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
                 ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
             </span>
@@ -1196,19 +1387,25 @@ function setupSortableLists() {
         ulElement.sortableInstance = new Sortable(ulElement, {
             animation: 150,
             handle: '.drag-handle',
-            filter: '.locked',
+            // Removendo o filtro de classe 'locked' para permitir arrastar o item
+            // independentemente do estado do cadeado. A lógica de "não pode entrar em campo"
+            // continua nos dropdowns e na função trocarJogador.
+            // filter: '.locked', // <--- Removido / Comentado
             onMove: function (evt) {
-                return !evt.related.classList.contains('locked') && !evt.dragged.classList.contains('locked');
+                // Se a intenção é APENAS impedir arrastar para fora da fila,
+                // mas permitir reordenar dentro da fila:
+                // `evt.related` é o elemento para o qual `evt.dragged` está sendo movido.
+                // Se `evt.to` (lista destino) não é o `ulElement` atual, impede.
+                if (evt.to !== ulElement) {
+                    return !evt.dragged.classList.contains('locked'); // Só pode arrastar para fora da fila se NÃO estiver travado
+                }
+                return true; // Sempre permite reordenar dentro da mesma fila
             },
             onEnd: function (evt) {
-                if (!evt.item.classList.contains('locked')) {
-                    salvarEstadoAtual();
-                    const [movedItem] = filaArray.splice(evt.oldIndex, 1);
-                    filaArray.splice(evt.newIndex, 0, movedItem);
-                    // O estado de travado não deve ser alterado por aqui,
-                    // ele já é persistido pelo toggleLock ou outras funções.
-                    atualizarTela();
-                }
+                salvarEstadoAtual();
+                const [movedItem] = filaArray.splice(evt.oldIndex, 1);
+                filaArray.splice(evt.newIndex, 0, movedItem);
+                atualizarTela();
             }
         });
     };
@@ -1225,7 +1422,8 @@ function adicionarPontoAvulso(time) {
     if (vencedor) {
         registrarVitoria(vencedor);
     }
-    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); // Salva stats após ponto
+    // Salva jogadoresStats após cada ponto para persistência imediata
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
 }
 
@@ -1326,14 +1524,14 @@ if (!primeiraInicializacaoConcluida && filaGeral.length === 0 && filaEstrela.len
         if (!jogadoresStats[nome]) {
             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
         }
-        jogadoresTravados[nome] = false; 
+        jogadoresTravados[nome] = false; // Define explicitamente como destravado
     });
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
 } else {
     // Se não é a primeira inicialização OU as filas não estavam vazias (já foram preenchidas/carregadas)
     // Garante que o estado de travado de jogadores em campo seja false
-    // E de jogadores nas filas que não foram para campo seja o estado salvo ou true por padrão
+    // E de jogadores nas filas que não foram para campo seja o estado salvo ou false por padrão.
     const allKnownPlayers = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
     allKnownPlayers.forEach(nome => {
         if (!jogadoresStats[nome]) {
@@ -1342,8 +1540,11 @@ if (!primeiraInicializacaoConcluida && filaGeral.length === 0 && filaEstrela.len
         if (timeA.includes(nome) || timeB.includes(nome)) {
             jogadoresTravados[nome] = false; // Destravado se estiver em campo
         } else if (jogadoresTravados[nome] === undefined) {
-            jogadoresTravados[nome] = true; // Trava se nunca foi definido e não está em campo (padrão)
+            // Se o jogador não está em campo e seu estado não foi definido (jogadores novos ou dados corrompidos),
+            // ele é definido como destravado por padrão.
+            jogadoresTravados[nome] = false; 
         }
+        // Se já tinha um estado (true/false) e não está em campo, mantém esse estado.
     });
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
