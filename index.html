@@ -12,37 +12,31 @@
     <link rel="stylesheet" href="style.css">
 
     <script type="module">
-      // Importa as funções necessárias dos SDKs do Firebase
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
       import { getFirestore, setDoc, doc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (SUBSTITUA PELOS SEUS VALORES REAIS DO CONSOLE FIREBASE)
       const firebaseConfig = {
-		apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-		authDomain: "controle-de-partidas.firebaseapp.com",
-		projectId: "controle-de-partidas",
-		storageBucket: "controle-de-partidas.firebasestorage.app",
-		messagingSenderId: "492501310950",
-		appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-		};
+        apiKey: "YOUR_API_KEY", // SUBSTITUA PELA SUA
+        authDomain: "controle-de-partidas.firebaseapp.com", // SUBSTITUA PELA SUA
+        projectId: "controle-de-partidas", // SUBSTITUA PELA SUA
+        storageBucket: "controle-de-partidas.appspot.com", // SUBSTITUA PELA SUA
+        messagingSenderId: "YOUR_SENDER_ID", // SUBSTITUA PELA SUA
+        appId: "YOUR_APP_ID", // SUBSTITUA PELA SUA
+      };
 
-
-
-      // Inicializa o Firebase
       const app = initializeApp(firebaseConfig);
-      // Obtém uma referência para o serviço Firestore e a torna global para scripts.js
       window.db = getFirestore(app);
 
-      // Torna funções específicas do Firestore globalmente acessíveis para scripts.js
       window.setDoc = setDoc;
       window.doc = doc;
       window.collection = collection;
       window.addDoc = addDoc;
       window.serverTimestamp = serverTimestamp;
-      window.onSnapshot = onSnapshot; // Para o visualizador
-      window.query = query; // Para o visualizador
-      window.orderBy = orderBy; // Para o visualizador
-      window.limit = limit; // Para o visualizador
+      window.onSnapshot = onSnapshot; 
+      window.query = query;
+      window.orderBy = orderBy;
+      window.limit = limit;
 
     </script>
     </head>
@@ -109,26 +103,19 @@
                 </div>
             </div>
             <div id="statusPartida" class="status-info text-center text-sm text-gray-600 mt-2 p-2 bg-yellow-100 rounded-md hidden"></div>
-            <div class="flex justify-center gap-6 mt-4">
-                <div class="flex gap-3">
-                    <button onclick="adicionarPontoAvulso('A')" title="Ponto por erro para Time A" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1</button>
-                    <!--<button onclick="removerPontoAvulso('A')" title="Remover ponto avulso Time A" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1</button>-->
-                </div>
-                <div class="border-l-2 border-gray-300 h-10"></div> <div class="flex gap-3">
-                    <button onclick="adicionarPontoAvulso('B')" title="Ponto por erro para Time B" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1</button>
-                    <!--<button onclick="removerPontoAvulso('B')" title="Remover ponto avulso Time B" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">-1</button>-->
-                </div>
-            </div>
+                        
             <div class="times flex justify-between gap-4 mt-6">
                 <div class="time w-1/2 bg-green-50 p-4 rounded-lg shadow-inner">
                     <h3 class="text-xl font-semibold text-green-800 mb-2 text-center">Time A</h3>
                     <div class="vitorias-container text-center text-sm text-gray-600 mb-2">Vitórias: <span id="vitoriasA">0</span></div>
                     <ul id="timeA" class="space-y-2"></ul>
+                    <button onclick="adicionarPontoAvulso('A', 'ponto_normal')" title="Adicionar ponto ao Time A" class="mt-2 w-full px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1 Ponto</button>
                 </div>
                 <div class="time w-1/2 bg-blue-50 p-4 rounded-lg shadow-inner">
                     <h3 class="text-xl font-semibold text-blue-800 mb-2 text-center">Time B</h3>
                     <div class="vitorias-container text-center text-sm text-gray-600 mb-2">Vitórias: <span id="vitoriasB">0</span></div>
                     <ul id="timeB" class="space-y-2"></ul>
+                    <button onclick="adicionarPontoAvulso('B', 'ponto_normal')" title="Adicionar ponto ao Time B" class="mt-2 w-full px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">+1 Ponto</button>
                 </div>
             </div>
 
@@ -149,14 +136,15 @@
                 <button onclick="preencherTimesManualmente()" class="w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors mt-4">
                     Confirmar Times em Quadra
                 </button>
+           </div>            
+            <div class="w-full flex justify-center mt-6"> <button id="undoButton" onclick="desfazerUltimaAcao()" class="px-5 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-sm">Desfazer</button>
             </div>
-            <div><button id="undoButton" onclick="desfazerUltimaAcao()" class="flex-1 min-w-[140px] px-5 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Desfazer</button></div>    
-        </div>
-	<div class="botoes flex flex-wrap justify-center gap-3 mt-6">
-                <button onclick="registrarVitoria('A')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time A Venceu</button>
-                <button onclick="registrarVitoria('B')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time B Venceu</button>
-                <button onclick="resetarPlacar()" class="flex-1 min-w-[140px] px-5 py-3 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Resetar Placar</button>    
-        </div>    
+        </div>        
+		    <div class="botoes flex flex-wrap justify-center gap-3 mt-3">
+            <button onclick="registrarVitoria('A')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time A Venceu</button>
+            <button onclick="registrarVitoria('B')" class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Time B Venceu</button>
+            <button onclick="resetarPlacar()" class="flex-1 min-w-[140px] px-5 py-3 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Resetar Placar</button>    
+            </div>    
         <div class="fila-geral bg-white p-6 rounded-xl shadow-lg">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Fila Geral</h2>
             <div class="fila-group flex flex-wrap gap-3 mb-4">
