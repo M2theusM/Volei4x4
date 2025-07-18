@@ -6,6 +6,12 @@
 
 body {
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	overscroll-behavior-y: contain; /* Ou 'none' para desativar completamente, 'contain' é mais suave */
+
+}
+
+html {
+    overscroll-behavior-y: contain; /* Aplica também ao elemento raiz HTML */
 }
 
 /* Estilos customizados que não são facilmente substituídos por Tailwind */
