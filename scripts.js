@@ -674,6 +674,9 @@ function marcarPonto(time, jogador) {
     // Salva jogadoresStats após cada ponto para persistência imediata
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
+
+    // NOVO: Salvar o estado do jogo no Firestore após cada ponto
+    salvarEstadoDoJogoNoFirestore(); 
 }
 
 function registrarVitoria(vencedor) {
@@ -1427,6 +1430,9 @@ function adicionarPontoAvulso(time) {
     // Salva jogadoresStats após cada ponto para persistência imediata
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
+
+    // NOVO: Salvar o estado do jogo no Firestore após cada ponto
+    salvarEstadoDoJogoNoFirestore(); 
 }
 
 function removerPontoAvulso(time) {
@@ -1503,6 +1509,50 @@ function redefinirTudo() {
         // Recarrega a página para aplicar a redefinição
         location.reload(); 
     }
+}
+
+// NOVO: Função auxiliar para salvar o placar atual e o estado das filas no Firestore
+function salvarEstadoDoJogoNoFirestore() {
+    // Acessa as variáveis globais do Firebase inicializadas no index.html
+    if (!window.db) { 
+        console.warn("Firestore não inicializado. Não foi possível salvar o estado do jogo.");
+        return;
+    }
+
+    const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual'); // Documento único para placar atual
+    const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais'); // Documento único para filas
+    const statsDocRef = window.doc(window.db, 'statusJogo', 'statsJogadores'); // Documento único para stats globais
+
+    // Salvar Placar Atual
+    window.setDoc(placarDocRef, {
+        timeA: placarA,
+        timeB: placarB,
+        vitoriasA: vitoriasA, // Inclua as vitórias consecutivas também
+        vitoriasB: vitoriasB,
+        ultimoJogadorMarcou: null, // Pode ser adicionado aqui se quiser rastrear o último jogador
+        timestamp: window.serverTimestamp() // Firestore cria um timestamp no servidor
+    })
+    .then(() => { console.log("Placar atualizado no Firestore!"); })
+    .catch(error => { console.error("Erro ao atualizar placar no Firestore:", error); });
+
+    // Salvar Filas Atuais
+    window.setDoc(filasDocRef, {
+        filaGeral: filaGeral,
+        filaEstrela: filaEstrela,
+        jogadoresTravados: jogadoresTravados, // Também é importante para a visualização
+        estrelasRegistradas: estrelasRegistradas, // Para saber quem é estrela
+        timestamp: window.serverTimestamp()
+    })
+    .then(() => { console.log("Filas atualizadas no Firestore!"); })
+    .catch(error => { console.error("Erro ao atualizar filas no Firestore:", error); });
+
+    // Salvar Jogadores Stats Globais (para o ranking e destaques no visualizador)
+    window.setDoc(statsDocRef, {
+        jogadoresStats: jogadoresStats,
+        timestamp: window.serverTimestamp()
+    })
+    .then(() => { console.log("Estatísticas de jogadores atualizadas no Firestore!"); })
+    .catch(error => { console.error("Erro ao atualizar estatísticas no Firestore:", error); });
 }
 
 
