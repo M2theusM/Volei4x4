@@ -1629,9 +1629,12 @@ window.embaralharFila = embaralharFila;
 window.mostrarHistorico = mostrarHistorico;
 window.fecharHistorico = fecharHistorico;
 window.toggleLock = toggleLock;
+window.marcarPonto = marcarPonto;
 window.adicionarPontoAvulso = adicionarPontoAvulso;
 window.removerPontoAvulso = removerPontoAvulso;
 window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore; // Expõe esta também se precisar de um botão específico
+
+
 
 // Listener global para fechar modais (movido para fora de DOMContentLoaded para evitar duplicação)
 window.onclick = function(event) {
