@@ -296,6 +296,9 @@ function recomporTimesAposConfiguracao() {
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+    
+    // NOVO: Salvar o estado do jogo no Firestore após recomposição de times
+    salvarEstadoDoJogoNoFirestore();
 
     atualizarTela();
 }
@@ -1610,6 +1613,27 @@ iniciarNovoJogo(); // Esta chamada agora gerencia o comportamento de "primeira v
 historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
 atualizarTela();    
 
+// NOVO: Expor funções globais para o HTML (onclick, etc.)
+window.salvarConfiguracoes = salvarConfiguracoes;
+window.redefinirTudo = redefinirTudo;
+window.abrirConfiguracoes = abrirConfiguracoes;
+window.fecharConfiguracoes = fecharConfiguracoes;
+window.preencherTimesManualmente = preencherTimesManualmente;
+window.registrarVitoria = registrarVitoria;
+window.resetarPlacar = resetarPlacar;
+window.desfazerUltimaAcao = desfazerUltimaAcao;
+window.adicionarParticipante = adicionarParticipante;
+window.removerParticipante = removerParticipante;
+window.editarParticipante = editarParticipante;
+window.embaralharFila = embaralharFila;
+window.mostrarHistorico = mostrarHistorico;
+window.fecharHistorico = fecharHistorico;
+window.toggleLock = toggleLock;
+window.adicionarPontoAvulso = adicionarPontoAvulso;
+window.removerPontoAvulso = removerPontoAvulso;
+window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore; // Expõe esta também se precisar de um botão específico
+
+// Listener global para fechar modais (movido para fora de DOMContentLoaded para evitar duplicação)
 window.onclick = function(event) {
     if (event.target === document.getElementById('modalConfig')) {
         fecharConfiguracoes();
