@@ -16,7 +16,7 @@ let placarA = 0;
 let placarB = 0;
 let jogadoresStats = {}; // { "NomeDoJogador": { pontos: 0, vitorias: 0, derrotas: 0 } }
 let jogadoresTravados = {}; // { "NomeDoJogador": true/false }
-let logPontosPartidaAtual = []; // NOVO: Armazena o histórico de pontos da partida atual
+let logPontosPartidaAtual = []; // Armazena o histórico de pontos da partida atual
 
 let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
 let tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
@@ -46,7 +46,7 @@ function salvarEstadoAtual() {
         placarB: placarB,
         jogadoresStats: JSON.parse(JSON.stringify(jogadoresStats)),
         jogadoresTravados: JSON.parse(JSON.stringify(jogadoresTravados)), // Salva o estado de travados
-        logPontosPartidaAtual: JSON.parse(JSON.stringify(logPontosPartidaAtual)), // NOVO: Salva o log de pontos
+        logPontosPartidaAtual: JSON.parse(JSON.stringify(logPontosPartidaAtual)), // Salva o log de pontos
         historicoPartidas: JSON.parse(JSON.stringify(historicoPartidas)),
     };
     historicoEstados.push(estado);
@@ -67,7 +67,7 @@ function restaurarEstado(estado) {
     placarB = estado.placarB;
     jogadoresStats = estado.jogadoresStats;
     jogadoresTravados = estado.jogadoresTravados; // Restaura o estado de travados
-    logPontosPartidaAtual = estado.logPontosPartidaAtual; // NOVO: Restaura o log de pontos
+    logPontosPartidaAtual = estado.logPontosPartidaAtual; // Restaura o log de pontos
     historicoPartidas = estado.historicoPartidas;
 }
 
@@ -227,7 +227,7 @@ function recomporTimesAposConfiguracao() {
                     timeA.push(estrelaDisponivel);
                     filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
                 } else {
-                    break; // Não há jogadores disponíveis
+                    break;
                 }
             }
         }
@@ -891,7 +891,7 @@ function resetarPlacar() {
     logPontosPartidaAtual = []; // NOVO: Limpa o log de pontos se o placar for resetado
     atualizarTela();
     // NOVO: Salva o estado do jogo no Firestore após reset de placar
-    salvarEstadoDoJogoNoFirestore();
+    salvarEstadoDoJogoNoFirestore(null, null, 'reset'); // NOVO: Passa 'reset' como tipoPonto
 }
 
 function adicionarParticipante(tipoFila) {
@@ -1594,7 +1594,7 @@ function redefinirTudo() {
         localStorage.setItem('primeiraInicializacaoConcluida', 'false');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); // Para reexibir o alerta de primeira vez
 
-        // NOVO: Deleta documentos e limpa a coleção de histórico no Firestore
+        // NOVO: Tenta deletar documentos no Firestore para resetar o visualizador
         if (window.db) {
             const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual');
             const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais');
@@ -1614,14 +1614,12 @@ function redefinirTudo() {
                 .catch(e => console.error("Erro resetar stats Firestore:", e));
 
             // Para apagar a coleção de histórico:
-            // Isso requer ler todos os documentos e deletar um por um.
-            // Para grandes coleções, é melhor fazer isso com Cloud Functions.
-            // Para sua aplicação, se o número de partidas não for excessivo, podemos fazer assim:
+            // Obtém todos os documentos da coleção e os deleta um por um.
             window.getDocs(historicoCollectionRef) // NOVO: getDocs para obter todos os documentos
                 .then((querySnapshot) => {
                     const deletePromises = [];
                     querySnapshot.forEach((doc) => {
-                        deletePromises.push(window.deleteDoc(window.doc(db, 'historicoPartidas', doc.id))); // NOVO: deleteDoc
+                        deletePromises.push(window.deleteDoc(window.doc(window.db, 'historicoPartidas', doc.id))); // NOVO: deleteDoc
                     });
                     return Promise.all(deletePromises);
                 })
