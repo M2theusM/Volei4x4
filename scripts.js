@@ -1568,3 +1568,38 @@ window.onclick = function(event) {
         fecharHistorico();
     }
 }
+
+// NOVO: Desativar "pull-to-refresh"
+document.addEventListener('DOMContentLoaded', () => {
+    let lastTouchY = 0; // Para registrar a posição Y do último toque
+    let isPulling = false; // Sinaliza se o usuário está puxando para baixo
+
+    document.body.addEventListener('touchstart', (e) => {
+        // Registra a posição Y do toque inicial
+        lastTouchY = e.touches[0].clientY;
+        // Assume que não está puxando inicialmente
+        isPulling = false;
+    }, { passive: false }); // Use passive: false para poder chamar preventDefault
+
+    document.body.addEventListener('touchmove', (e) => {
+        const currentTouchY = e.touches[0].clientY;
+        const deltaY = currentTouchY - lastTouchY;
+
+        // Se o scroll está no topo da página (scrollTop é 0)
+        // E o usuário está puxando para baixo (deltaY > 0)
+        // E ainda não foi identificado como um "pull-to-refresh"
+        if (document.documentElement.scrollTop === 0 && deltaY > 0 && !isPulling) {
+            isPulling = true; // Marca que está tentando puxar
+            e.preventDefault(); // Impede o comportamento padrão (pull-to-refresh)
+        } else if (isPulling) {
+            // Se já estamos no modo de puxar, continue impedindo o default
+            e.preventDefault();
+        }
+        
+        lastTouchY = currentTouchY; // Atualiza a última posição do toque
+    }, { passive: false }); // Use passive: false para poder chamar preventDefault
+
+    document.body.addEventListener('touchend', () => {
+        isPulling = false; // Reseta o estado quando o toque termina
+    });
+});
