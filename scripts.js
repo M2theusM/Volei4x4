@@ -16,7 +16,7 @@ let placarA = 0;
 let placarB = 0;
 let jogadoresStats = {}; // { "NomeDoJogador": { pontos: 0, vitorias: 0, derrotas: 0 } }
 let jogadoresTravados = {}; // { "NomeDoJogador": true/false }
-
+let logPontosPartidaAtual = [];
 let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
 let tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
 let estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1; // Agora representa o MÍNIMO
