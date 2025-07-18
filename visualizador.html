@@ -9,17 +9,17 @@
     
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-      import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; // NOVO: Importa getDocs e deleteDoc
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
-       const firebaseConfig = {
-		apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-		authDomain: "controle-de-partidas.firebaseapp.com",
-		projectId: "controle-de-partidas",
-		storageBucket: "controle-de-partidas.firebasestorage.app",
-		messagingSenderId: "492501310950",
-		appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-		};
+      const firebaseConfig = {
+        apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
+	authDomain: "controle-de-partidas.firebaseapp.com",
+	projectId: "controle-de-partidas",
+	storageBucket: "controle-de-partidas.firebasestorage.app",
+	messagingSenderId: "492501310950",
+	appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
+	};
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -27,7 +27,7 @@
       // Variáveis locais para armazenar os dados recebidos do Firestore
       let jogadoresStatsLocal = {};
       let estrelasRegistradasLocal = [];
-      let jogadoresTravadosLocal = {}; // NOVO: Para estado de travado no visualizador
+      let jogadoresTravadosLocal = {}; 
 
       // --- Lógica para ler o placar em tempo real ---
       document.addEventListener('DOMContentLoaded', () => {
@@ -57,10 +57,11 @@
 
                   // Lógica do balão de último ponto
                   if (data.ultimoJogadorMarcou && data.timeUltimoMarcador) {
-                      let mensagem = `+1 ponto ${data.timeUltimoMarcador}: ${data.ultimoJogadorMarcou}`;
-                      // NOVO: Condição para ponto avulso no balão
+                      let mensagem;
                       if (data.tipoPonto === 'ponto_avulso') {
                           mensagem = `+1 ponto Time ${data.timeUltimoMarcador}`; // Sem nome do jogador para avulso
+                      } else {
+                          mensagem = `+1 ponto ${data.timeUltimoMarcador}: ${data.ultimoJogadorMarcou}`;
                       }
                       ultimoPontoBalaoEl.textContent = mensagem;
                       ultimoPontoBalaoEl.classList.remove('hidden');
@@ -69,8 +70,12 @@
                       ultimoPontoBalaoEl.classList.remove('animate-fade-in-out');
                       void ultimoPontoBalaoEl.offsetWidth; // Trigger reflow to restart animation
                       ultimoPontoBalaoEl.classList.add('animate-fade-in-out');
-                  } else {
-                      ultimoPontoBalaoEl.classList.add('hidden'); // Esconde se não há marcador
+                  } else if (data.tipoPonto === 'reset') { // NOVO: Se o tipoPonto for 'reset', limpa o balão
+                      ultimoPontoBalaoEl.classList.add('hidden');
+                      ultimoPontoBalaoEl.textContent = '';
+                  }
+                  else {
+                      ultimoPontoBalaoEl.classList.add('hidden'); // Esconde se não há marcador ou tipo não reconhecido
                   }
 
                   // NOVO: Renderiza o histórico de pontos da partida atual
@@ -172,8 +177,8 @@
           });
 
 
-          // Escutar Histórico de Partidas
-          const q = query(historicoCollectionRef, orderBy("data", "desc"), limit(5)); // Últimas 5 partidas
+          // Escutar Histórico de Partidas (AGORA SEM LIMITE DE 5 E ORDENADO POR DATA)
+          const q = query(historicoCollectionRef, orderBy("data", "desc")); // NOVO: Removido limit(5)
           onSnapshot(q, (querySnapshot) => {
               const listaHistoricoEl = document.getElementById('visualizarHistorico');
               listaHistoricoEl.innerHTML = '';
@@ -189,6 +194,7 @@
                       else if (partida.vencedor === 'Time B') backgroundClass = 'bg-blue-100 border-blue-200';
                       else backgroundClass = 'bg-yellow-100 border-yellow-200';
 
+                      // Converte Firestore Timestamp para objeto Date e formata
                       const dataFormatada = partida.data ? new Date(partida.data.toDate()).toLocaleString('pt-BR') : 'N/A';
 
                       li.className = `p-3 rounded-lg shadow-sm border ${backgroundClass} mb-2`;
@@ -235,7 +241,7 @@
                               }).join('');
                               if ((partida.detalhesPontos || []).length === 0) {
                                   ulDetalhes.innerHTML = '<li class="text-gray-500">Nenhum detalhe de ponto disponível.</li>';
-                              }
+                               }
                           } else {
                               toggleButton.textContent = "Ver detalhes dos pontos";
                           }
