@@ -26,6 +26,9 @@ let maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecut
 // Variável de controle para o primeiro acesso
 let primeiraInicializacaoConcluida = localStorage.getItem('primeiraInicializacaoConcluida') === 'true';
 
+// NOVO: Variável para registrar a sequência de pontos da partida atual
+let logPontosPartidaAtual = [];
+
 // O histórico de partidas não será persistido entre recarregamentos
 let historicoPartidas = [];
 let historicoEstados = [];
@@ -46,6 +49,7 @@ function salvarEstadoAtual() {
         jogadoresStats: JSON.parse(JSON.stringify(jogadoresStats)),
         jogadoresTravados: JSON.parse(JSON.stringify(jogadoresTravados)), // Salva o estado de travados
         historicoPartidas: JSON.parse(JSON.stringify(historicoPartidas)),
+        logPontosPartidaAtual: JSON.parse(JSON.stringify(logPontosPartidaAtual)), // NOVO: Salva o log de pontos
     };
     historicoEstados.push(estado);
     if (historicoEstados.length > MAX_UNDO_HISTORY) {
@@ -66,6 +70,7 @@ function restaurarEstado(estado) {
     jogadoresStats = estado.jogadoresStats;
     jogadoresTravados = estado.jogadoresTravados; // Restaura o estado de travados
     historicoPartidas = estado.historicoPartidas;
+    logPontosPartidaAtual = estado.logPontosPartidaAtual; // NOVO: Restaura o log de pontos
 }
 
 function desfazerUltimaAcao() {
@@ -331,6 +336,8 @@ function iniciarNovoJogo() {
     vitoriasB = 0;
     placarA = 0;
     placarB = 0;
+    // NOVO: Resetar o log de pontos para a nova partida
+    logPontosPartidaAtual = []; 
     // Não resetar jogadoresStats e jogadoresTravados aqui,
     // eles serão carregados do localStorage em carregarDadosIniciais()
     // e modificados dinamicamente.
@@ -427,7 +434,7 @@ function iniciarNovoJogo() {
     timeA.forEach(j => jogadoresTravados[j] = false);
     timeB.forEach(j => jogadoresTravados[j] = false);
     
-    // NOVO: Salva jogadoresTravados após formação automática dos times.
+    // Salva jogadoresTravados após formação automática dos times.
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
@@ -527,9 +534,10 @@ function preencherTimesManualmente() {
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
 
-
     alert("Times preenchidos com sucesso! A partida pode começar.");
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após preenchimento manual
+    salvarEstadoDoJogoNoFirestore(); 
 }
 
 function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
@@ -608,6 +616,8 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); // Salva o estado atual
 
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após a troca de jogador
+    salvarEstadoDoJogoNoFirestore(); 
 }
 
 function verificarVitoriaPartida() {
@@ -663,6 +673,15 @@ function marcarPonto(time, jogador) {
     if (time === 'A') placarA++;
     else placarB++;
 
+    // NOVO: Adiciona o ponto ao log de pontos da partida atual
+    logPontosPartidaAtual.push({
+        placarA: placarA,
+        placarB: placarB,
+        time: time,
+        jogador: jogador,
+        tipo: 'ponto_normal' // Ou 'ponto_por_erro' se vier de adicionarPontoAvulso
+    });
+
     // Marcar primeiraInicializacaoConcluida se for a primeira vez que um ponto é marcado
     if (!primeiraInicializacaoConcluida && (placarA > 0 || placarB > 0)) {
         primeiraInicializacaoConcluida = true;
@@ -678,8 +697,8 @@ function marcarPonto(time, jogador) {
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
 
-    // NOVO: Salvar o estado do jogo no Firestore após cada ponto
-    salvarEstadoDoJogoNoFirestore(); 
+    // NOVO: Salvar o estado do jogo no Firestore após cada ponto, incluindo o último marcador
+    salvarEstadoDoJogoNoFirestore(jogador, time, logPontosPartidaAtual); 
 }
 
 function registrarVitoria(vencedor) {
@@ -714,16 +733,26 @@ function registrarVitoria(vencedor) {
     }
 
     // NOVO: Adiciona o registro no histórico de partidas ANTES de redefinir timeA/timeB
-    historicoPartidas.unshift({
+    const partidaHistorico = {
         timeA: [...timeA], // Clona arrays para o histórico
         timeB: [...timeB], // Clona arrays para o histórico
         placarFinalA: placarA,
         placarFinalB: placarB,
         vencedor: vencedor === 'ambosSaem' ? 'Empate/Ambos Saíram' : `Time ${vencedor}`,
-        data: new Date().toLocaleString('pt-BR')
-    });
-    // NOVO: Salva o histórico de partidas no localStorage
-    // localStorage.setItem('historicoPartidas', JSON.stringify(historicoPartidas)); // Se quiser persistir o histórico
+        data: new Date().toLocaleString('pt-BR'),
+        detalhesPontos: [...logPontosPartidaAtual] // NOVO: Salva o log de pontos da partida atual
+    };
+    historicoPartidas.unshift(partidaHistorico);
+
+    // NOVO: Salvar a partida finalizada no Firestore
+    const partidasCollectionRef = window.collection(window.db, 'historicoPartidas');
+    window.addDoc(partidasCollectionRef, {
+        ...partidaHistorico, // Inclui todos os dados da partida
+        data: window.serverTimestamp() // Usa timestamp do servidor para consistência
+    })
+    .then(() => { console.log("Partida finalizada salva no Firestore!"); })
+    .catch(error => { console.error("Erro ao salvar partida no Firestore: ", error); });
+
 
     // Marcar primeiraInicializacaoConcluida como true após a primeira vitória
     if (!primeiraInicializacaoConcluida) {
@@ -826,6 +855,8 @@ function registrarVitoria(vencedor) {
 
     placarA = 0;
     placarB = 0;
+    // NOVO: Resetar o log de pontos para a próxima partida
+    logPontosPartidaAtual = [];
 
     // NOVO: Salvamento explícito e final de TODOS os estados relevantes após uma vitória.
     // Isso garante que os dados atualizados sejam persistidos antes da próxima atualização de tela ou recarga.
@@ -855,6 +886,8 @@ function registrarVitoria(vencedor) {
     localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
 
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após a vitória (e reset do placar)
+    salvarEstadoDoJogoNoFirestore(); 
 }
 
 
@@ -864,7 +897,11 @@ function resetarPlacar() {
     placarB = 0;
     vitoriasA = 0;
     vitoriasB = 0;
+    // NOVO: Resetar o log de pontos ao resetar placar
+    logPontosPartidaAtual = []; 
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após resetar placar
+    salvarEstadoDoJogoNoFirestore();
 }
 
 function adicionarParticipante(tipoFila) {
@@ -917,6 +954,8 @@ function adicionarParticipante(tipoFila) {
 
         nomeInput.value = "";
         atualizarTela();
+        // NOVO: Salvar o estado do jogo no Firestore após adicionar participante
+        salvarEstadoDoJogoNoFirestore();
     }
 }
 
@@ -947,6 +986,8 @@ function removerParticipante(tipoFila, index) {
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após remover participante
+    salvarEstadoDoJogoNoFirestore();
 }
 
 
@@ -1024,6 +1065,8 @@ function editarParticipante(tipoFila, index, novoNome) {
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após editar participante
+    salvarEstadoDoJogoNoFirestore();
 }
 
 function embaralharFila(tipoFila) {
@@ -1036,6 +1079,8 @@ function embaralharFila(tipoFila) {
         localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     }
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após embaralhar
+    salvarEstadoDoJogoNoFirestore();
 }
 
 function atualizarRanking() {
@@ -1421,10 +1466,24 @@ function setupSortableLists() {
     setupSortable(document.getElementById('filaEstrela'), filaEstrela);
 }
 
-function adicionarPontoAvulso(time) {
+function adicionarPontoAvulso(time, tipoPonto = 'ponto_por_erro') { // NOVO: Adiciona tipoPonto
     salvarEstadoAtual();
+    // Você precisa de um 'jogador' para o log de pontos.
+    // Para pontos avulsos, podemos usar um nome padrão como "Time A" ou "Time B".
+    const jogadorResponsavel = (time === 'A' ? 'Time A' : 'Time B') + ' (erro)'; 
+
     if (time === 'A') placarA++;
     else if (time === 'B') placarB++;
+
+    // NOVO: Adiciona o ponto ao log de pontos da partida atual
+    logPontosPartidaAtual.push({
+        placarA: placarA,
+        placarB: placarB,
+        time: time,
+        jogador: jogadorResponsavel, // Nome do jogador ou time para ponto avulso
+        tipo: tipoPonto 
+    });
+
 
     const vencedor = verificarVitoriaPartida();
     if (vencedor) {
@@ -1435,14 +1494,26 @@ function adicionarPontoAvulso(time) {
     atualizarTela();
 
     // NOVO: Salvar o estado do jogo no Firestore após cada ponto
-    salvarEstadoDoJogoNoFirestore(); 
+    salvarEstadoDoJogoNoFirestore(jogadorResponsavel, time, logPontosPartidaAtual); 
 }
 
 function removerPontoAvulso(time) {
     salvarEstadoAtual();
+    // NOVO: Lógica para remover do log de pontos, se houver
+    if (logPontosPartidaAtual.length > 0) {
+        // Remover o último ponto marcado
+        const ultimoPonto = logPontosPartidaAtual.pop();
+        // Se o ponto era do tipo 'ponto_por_erro', ou se o jogador tinha pontos individuais,
+        // você precisaria de lógica mais complexa para reverter jogadoresStats[jogador].pontos.
+        // Por simplicidade, estamos apenas revertendo o placar e removendo do log.
+    }
+
     if (time === 'A' && placarA > 0) placarA--;
     else if (time === 'B' && placarB > 0) placarB--;
+    
     atualizarTela();
+    // NOVO: Salvar o estado do jogo no Firestore após remover ponto
+    salvarEstadoDoJogoNoFirestore(); // Não há um jogador específico a ser passado
 }
 
 function mostrarHistorico() {
@@ -1453,7 +1524,7 @@ function mostrarHistorico() {
         listaHistorico.innerHTML = '<li class="text-center text-gray-500 py-4">Nenhuma partida registrada ainda.</li>';
     } else {
         const historicoInvertido = [...historicoPartidas].reverse();    
-        historicoInvertido.forEach((partida) => {    
+        historicoInvertido.forEach((partida, indexPartida) => {    // NOVO: Adicionado indexPartida
             const numeroPartidaOriginal = historicoPartidas.length - historicoInvertido.indexOf(partida);
 
             const li = document.createElement('li');
@@ -1488,6 +1559,29 @@ function mostrarHistorico() {
                         <p class="text-sm text-gray-600 flex flex-col">${partida.timeB.map(player => `<span>${player}</span>`).join('')}</p>
                     </div>
                 </div>
+                
+                ${partida.detalhesPontos && partida.detalhesPontos.length > 0 ? `
+                    <button onclick="toggleDetalhesPontos(event, ${indexPartida})" class="text-blue-500 hover:underline mt-2 text-sm">Ver detalhes dos pontos</button>
+                    <div id="detalhesPontos-${indexPartida}" class="detalhes-pontos-partida mt-4 border-t border-gray-200 pt-3 hidden">
+                        <h4 class="font-bold text-gray-700 mb-2 text-center">Sequência de Pontos:</h4>
+                        <ul class="list-none space-y-1">
+                            ${partida.detalhesPontos.map(ponto => {
+                                const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
+                                const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
+                                const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
+                                let descricaoPonto = `Ponto ${ponto.jogador}`;
+                                if (ponto.tipo === 'ponto_por_erro') {
+                                    descricaoPonto = `Ponto por erro para ${ponto.timeUltimoMarcador || `Time ${ponto.time}`}`;
+                                }
+                                return `
+                                    <li class="text-gray-700">
+                                        <span class="font-bold ${corTimeA}">${ponto.placarA}</span> x <span class="font-bold ${corTimeB}">${ponto.placarB}</span> - <span class="${corVencedorPonto}">${descricaoPonto}</span>
+                                    </li>
+                                `;
+                            }).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
             `;
             li.className = backgroundClass + ' p-4 rounded-lg shadow-md mb-3';
             listaHistorico.appendChild(li);
@@ -1495,6 +1589,22 @@ function mostrarHistorico() {
     }
     document.getElementById('modalHistorico').classList.remove('hidden');
 }
+
+// NOVO: Função para expandir/colapsar detalhes dos pontos no histórico
+function toggleDetalhesPontos(event, indexPartida) {
+    event.stopPropagation(); // Evita fechar o modal se o clique for no botão
+    const detalhesDiv = document.getElementById(`detalhesPontos-${indexPartida}`);
+    if (detalhesDiv) {
+        detalhesDiv.classList.toggle('hidden');
+        const button = event.target;
+        if (detalhesDiv.classList.contains('hidden')) {
+            button.textContent = 'Ver detalhes dos pontos';
+        } else {
+            button.textContent = 'Ocultar detalhes dos pontos';
+        }
+    }
+}
+
 
 function fecharHistorico() {
     document.getElementById('modalHistorico').classList.add('hidden');
@@ -1515,7 +1625,7 @@ function redefinirTudo() {
 }
 
 // NOVO: Função auxiliar para salvar o placar atual e o estado das filas no Firestore
-function salvarEstadoDoJogoNoFirestore() {
+function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, historicoPontosPartida = null) {
     // Acessa as variáveis globais do Firebase inicializadas no index.html
     if (!window.db) { 
         console.warn("Firestore não inicializado. Não foi possível salvar o estado do jogo.");
@@ -1532,7 +1642,9 @@ function salvarEstadoDoJogoNoFirestore() {
         timeB: placarB,
         vitoriasA: vitoriasA, // Inclua as vitórias consecutivas também
         vitoriasB: vitoriasB,
-        ultimoJogadorMarcou: null, // Pode ser adicionado aqui se quiser rastrear o último jogador
+        ultimoJogadorMarcou: ultimoMarcador, // NOVO: Campo para o último marcador
+        timeUltimoMarcador: timeUltimoMarcador, // NOVO: Campo para o time do último marcador
+        historicoPontosDetalhado: historicoPontosPartida, // NOVO: Log de pontos da partida atual
         timestamp: window.serverTimestamp() // Firestore cria um timestamp no servidor
     })
     .then(() => { console.log("Placar atualizado no Firestore!"); })
@@ -1613,7 +1725,7 @@ iniciarNovoJogo(); // Esta chamada agora gerencia o comportamento de "primeira v
 historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
 atualizarTela();    
 
-// NOVO: Expor funções globais para o HTML (onclick, etc.)
+// Expor funções globais para o HTML (onclick, etc.)
 window.salvarConfiguracoes = salvarConfiguracoes;
 window.redefinirTudo = redefinirTudo;
 window.abrirConfiguracoes = abrirConfiguracoes;
@@ -1629,12 +1741,11 @@ window.embaralharFila = embaralharFila;
 window.mostrarHistorico = mostrarHistorico;
 window.fecharHistorico = fecharHistorico;
 window.toggleLock = toggleLock;
-window.marcarPonto = marcarPonto;
+window.marcarPonto = marcarPonto; // EXPOSTA AGORA!
 window.adicionarPontoAvulso = adicionarPontoAvulso;
 window.removerPontoAvulso = removerPontoAvulso;
 window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore; // Expõe esta também se precisar de um botão específico
-
-
+window.toggleDetalhesPontos = toggleDetalhesPontos; // Para o histórico de partidas
 
 // Listener global para fechar modais (movido para fora de DOMContentLoaded para evitar duplicação)
 window.onclick = function(event) {
