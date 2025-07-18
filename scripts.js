@@ -678,7 +678,7 @@ function marcarPonto(time, jogador, tipoPonto = 'ponto_normal') { // NOVO: tipoP
         placarA: placarA,
         placarB: placarB,
         time: time,
-        jogador: jogador,
+        jogador: jogador, // NOVO: jogador é o nome do jogador que marcou
         tipo: tipoPonto,
         timestampLocal: new Date().toISOString() // Para ordenação e depuração
     });
@@ -1480,7 +1480,7 @@ function adicionarPontoAvulso(time, tipoPonto = 'ponto_avulso') { // NOVO: Adici
     atualizarTela();
 
     // NOVO: Salvar o estado do jogo no Firestore após cada ponto
-    salvarEstadoDoJogoNoFirestore(null, time, tipoPonto); // NOVO: Passa time do avulso e tipoPonto
+    salvarEstadoDoJogoNoFirestore(null, time, tipoPonto); // NOVO: Passa null para jogador, time do avulso e tipoPonto
 }
 
 function removerPontoAvulso(time) {
@@ -1499,7 +1499,7 @@ function mostrarHistorico() {
     } else {
         const historicoInvertido = [...historicoPartidas].reverse();    
         historicoInvertido.forEach((partida) => {    
-            const numeroPartidaOriginal = historicoPartidas.length - historicoInvertido.indexOf(partida);
+            const numeroPartidaOriginal = historicoInvertido.length - (historicoInvertido.indexOf(partida) + 1); // NOVO: Calcula número correto
 
             const li = document.createElement('li');
             let backgroundClass = '';
@@ -1533,8 +1533,48 @@ function mostrarHistorico() {
                         <p class="text-sm text-gray-600 flex flex-col">${partida.timeB.map(player => `<span>${player}</span>`).join('')}</p>
                     </div>
                 </div>
+                <button class="toggle-detalhes text-blue-500 hover:underline mt-2">Ver detalhes dos pontos</button>
+                <div class="detalhes-pontos-partida mt-3 pt-3 border-t border-gray-200 hidden">
+                    <h4 class="font-bold text-gray-700 mb-2">Sequência de Pontos:</h4>
+                    <ul class="list-disc list-inside text-sm space-y-1"></ul>
+                </div>
             `;
-            li.className = backgroundClass + ' p-4 rounded-lg shadow-md mb-3';
+            
+            const toggleButton = li.querySelector('.toggle-detalhes');
+            const detalhesDiv = li.querySelector('.detalhes-pontos-partida');
+            const ulDetalhes = detalhesDiv.querySelector('ul');
+
+            toggleButton.addEventListener('click', () => {
+                detalhesDiv.classList.toggle('hidden');
+                if (!detalhesDiv.classList.contains('hidden')) {
+                    toggleButton.textContent = "Ocultar detalhes dos pontos";
+                    // Renderiza os pontos detalhados APENAS quando a div é expandida
+                    ulDetalhes.innerHTML = (partida.detalhesPontos || []).map(ponto => {
+                        const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
+                        const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
+                        const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
+                        
+                        let descricaoPonto;
+                        if (ponto.tipo === 'ponto_avulso') {
+                            descricaoPonto = `Ponto Time ${ponto.time}`;
+                        } else {
+                            descricaoPonto = `Ponto ${ponto.jogador}`;
+                        }
+
+                        return `
+                        <li>
+                            <span class="font-bold ${corTimeA}">${ponto.placarA}</span> x <span class="font-bold ${corTimeB}">${ponto.placarB}</span> - <span class="${corVencedorPonto}">${descricaoPonto}</span>
+                        </li>
+                        `;
+                    }).join('');
+                    if ((partida.detalhesPontos || []).length === 0) {
+                        ulDetalhes.innerHTML = '<li class="text-gray-500">Nenhum detalhe de ponto disponível.</li>';
+                    }
+                } else {
+                    toggleButton.textContent = "Ver detalhes dos pontos";
+                }
+            });
+
             listaHistorico.appendChild(li);
         });
     }
@@ -1554,14 +1594,14 @@ function redefinirTudo() {
         localStorage.setItem('primeiraInicializacaoConcluida', 'false');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); // Para reexibir o alerta de primeira vez
 
-        // NOVO: Tenta deletar documentos no Firestore para resetar o visualizador
+        // NOVO: Deleta documentos e limpa a coleção de histórico no Firestore
         if (window.db) {
             const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual');
             const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais');
             const statsDocRef = window.doc(window.db, 'statusJogo', 'statsJogadores');
             const historicoCollectionRef = window.collection(window.db, 'historicoPartidas');
 
-            window.setDoc(placarDocRef, { timeA: 0, timeB: 0, vitoriasA: 0, vitoriasB: 0, ultimoJogadorMarcou: null, timeUltimoMarcador: null, historicoPontosDetalhado: [], timestamp: window.serverTimestamp() })
+            window.setDoc(placarDocRef, { timeA: 0, timeB: 0, vitoriasA: 0, vitoriasB: 0, ultimoJogadorMarcou: null, timeUltimoMarcador: null, historicoPontosDetalhado: [], tipoPonto: 'reset', timestamp: window.serverTimestamp() })
                 .then(() => console.log("Placar Firestore resetado."))
                 .catch(e => console.error("Erro resetar placar Firestore:", e));
             
@@ -1573,10 +1613,21 @@ function redefinirTudo() {
                 .then(() => console.log("Stats Firestore resetados."))
                 .catch(e => console.error("Erro resetar stats Firestore:", e));
 
-            // Para histórico, é mais complexo deletar uma coleção inteira.
-            // Para propósitos de reset, podemos simplesmente não exibir nada e deixar o usuário saber que "começou do zero".
-            // Ou, se realmente precisar apagar, você faria isso manualmente no Console do Firebase ou com uma Cloud Function.
-            // Por enquanto, apenas os docs de status são resetados.
+            // Para apagar a coleção de histórico:
+            // Isso requer ler todos os documentos e deletar um por um.
+            // Para grandes coleções, é melhor fazer isso com Cloud Functions.
+            // Para sua aplicação, se o número de partidas não for excessivo, podemos fazer assim:
+            window.getDocs(historicoCollectionRef) // NOVO: getDocs para obter todos os documentos
+                .then((querySnapshot) => {
+                    const deletePromises = [];
+                    querySnapshot.forEach((doc) => {
+                        deletePromises.push(window.deleteDoc(window.doc(db, 'historicoPartidas', doc.id))); // NOVO: deleteDoc
+                    });
+                    return Promise.all(deletePromises);
+                })
+                .then(() => console.log("Coleção historicoPartidas limpa no Firestore."))
+                .catch((e) => console.error("Erro ao limpar coleção historicoPartidas:", e));
+
         }
 
 
