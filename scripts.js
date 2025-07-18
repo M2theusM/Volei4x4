@@ -16,7 +16,8 @@ let placarA = 0;
 let placarB = 0;
 let jogadoresStats = {}; // { "NomeDoJogador": { pontos: 0, vitorias: 0, derrotas: 0 } }
 let jogadoresTravados = {}; // { "NomeDoJogador": true/false }
-let logPontosPartidaAtual = [];
+let logPontosPartidaAtual = []; // NOVO: Armazena o histórico de pontos da partida atual
+
 let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
 let tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
 let estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1; // Agora representa o MÍNIMO
@@ -45,6 +46,7 @@ function salvarEstadoAtual() {
         placarB: placarB,
         jogadoresStats: JSON.parse(JSON.stringify(jogadoresStats)),
         jogadoresTravados: JSON.parse(JSON.stringify(jogadoresTravados)), // Salva o estado de travados
+        logPontosPartidaAtual: JSON.parse(JSON.stringify(logPontosPartidaAtual)), // NOVO: Salva o log de pontos
         historicoPartidas: JSON.parse(JSON.stringify(historicoPartidas)),
     };
     historicoEstados.push(estado);
@@ -65,6 +67,7 @@ function restaurarEstado(estado) {
     placarB = estado.placarB;
     jogadoresStats = estado.jogadoresStats;
     jogadoresTravados = estado.jogadoresTravados; // Restaura o estado de travados
+    logPontosPartidaAtual = estado.logPontosPartidaAtual; // NOVO: Restaura o log de pontos
     historicoPartidas = estado.historicoPartidas;
 }
 
@@ -1339,7 +1342,7 @@ function atualizarTela() {
         document.getElementById("timeA").innerHTML = timeA.map((j, i) => `
             <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
                 <div class="flex items-center w-full">
-                    <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('A', '${j.replace(/'/g, "\\'")}')" title="Marcar ponto">+</button>
+                    <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('A', '${j.replace(/'/g, "\\'")}', 'ponto_normal')" title="Marcar ponto">+</button>
                     <div class="flex-1 relative">
                         <span class="jogador-nome text-gray-700 font-medium">${j} ${estrelasRegistradas.includes(j) ? '⭐' : ''}</span>
                         <select onchange="if(this.value != -1) trocarJogador('A', ${i}, this.options[this.selectedIndex].dataset.fila, this.value);" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
@@ -1359,7 +1362,7 @@ function atualizarTela() {
         document.getElementById("timeB").innerHTML = timeB.map((j, i) => `
             <li class="flex items-center p-2 bg-white rounded-md shadow-sm border border-gray-200">
                 <div class="flex items-center w-full">
-                    <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('B', '${j.replace(/'/g, "\\'")}')" title="Marcar ponto">+</button>
+                    <button class="ponto px-3 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition-colors mr-2 text-lg" onclick="marcarPonto('B', '${j.replace(/'/g, "\\'")}', 'ponto_normal')" title="Marcar ponto">+</button>
                     <div class="flex-1 relative">
                         <span class="jogador-nome text-gray-700 font-medium">${j} ${estrelasRegistradas.includes(j) ? '⭐' : ''}</span>
                         <select onchange="if(this.value != -1) trocarJogador('B', ${i}, this.options[this.selectedIndex].dataset.fila, this.value);" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
@@ -1453,10 +1456,20 @@ function setupSortableLists() {
     setupSortable(document.getElementById('filaEstrela'), filaEstrela);
 }
 
-function adicionarPontoAvulso(time) {
+function adicionarPontoAvulso(time, tipoPonto = 'ponto_avulso') { // NOVO: Adiciona tipoPonto aqui também
     salvarEstadoAtual();
     if (time === 'A') placarA++;
     else if (time === 'B') placarB++;
+
+    // NOVO: Adiciona o ponto ao log de pontos da partida atual
+    logPontosPartidaAtual.push({
+        placarA: placarA,
+        placarB: placarB,
+        time: time,
+        jogador: `Time ${time}`, // NOVO: Para pontos avulsos, o marcador é o Time
+        tipo: tipoPonto,
+        timestampLocal: new Date().toISOString()
+    });
 
     const vencedor = verificarVitoriaPartida();
     if (vencedor) {
@@ -1467,7 +1480,7 @@ function adicionarPontoAvulso(time) {
     atualizarTela();
 
     // NOVO: Salvar o estado do jogo no Firestore após cada ponto
-    salvarEstadoDoJogoNoFirestore(null, null, 'ponto_avulso'); // Indica ponto avulso
+    salvarEstadoDoJogoNoFirestore(null, time, tipoPonto); // NOVO: Passa time do avulso e tipoPonto
 }
 
 function removerPontoAvulso(time) {
@@ -1541,13 +1554,39 @@ function redefinirTudo() {
         localStorage.setItem('primeiraInicializacaoConcluida', 'false');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); // Para reexibir o alerta de primeira vez
 
+        // NOVO: Tenta deletar documentos no Firestore para resetar o visualizador
+        if (window.db) {
+            const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual');
+            const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais');
+            const statsDocRef = window.doc(window.db, 'statusJogo', 'statsJogadores');
+            const historicoCollectionRef = window.collection(window.db, 'historicoPartidas');
+
+            window.setDoc(placarDocRef, { timeA: 0, timeB: 0, vitoriasA: 0, vitoriasB: 0, ultimoJogadorMarcou: null, timeUltimoMarcador: null, historicoPontosDetalhado: [], timestamp: window.serverTimestamp() })
+                .then(() => console.log("Placar Firestore resetado."))
+                .catch(e => console.error("Erro resetar placar Firestore:", e));
+            
+            window.setDoc(filasDocRef, { filaGeral: [], filaEstrela: [], jogadoresTravados: {}, estrelasRegistradas: [], timestamp: window.serverTimestamp() })
+                .then(() => console.log("Filas Firestore resetadas."))
+                .catch(e => console.error("Erro resetar filas Firestore:", e));
+
+            window.setDoc(statsDocRef, { jogadoresStats: {}, timestamp: window.serverTimestamp() })
+                .then(() => console.log("Stats Firestore resetados."))
+                .catch(e => console.error("Erro resetar stats Firestore:", e));
+
+            // Para histórico, é mais complexo deletar uma coleção inteira.
+            // Para propósitos de reset, podemos simplesmente não exibir nada e deixar o usuário saber que "começou do zero".
+            // Ou, se realmente precisar apagar, você faria isso manualmente no Console do Firebase ou com uma Cloud Function.
+            // Por enquanto, apenas os docs de status são resetados.
+        }
+
+
         // Recarrega a página para aplicar a redefinição
         location.reload(); 
     }
 }
 
 // NOVO: Função auxiliar para salvar o placar atual e o estado das filas no Firestore
-function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal', logPontos = logPontosPartidaAtual) { // Adiciona logPontos como parâmetro
+function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal') { // Adiciona tipoPonto aqui
     // Acessa as variáveis globais do Firebase inicializadas no index.html
     if (!window.db) { 
         console.warn("Firestore não inicializado. Não foi possível salvar o estado do jogo.");
@@ -1566,7 +1605,8 @@ function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador
         vitoriasB: vitoriasB,
         ultimoJogadorMarcou: ultimoMarcador, // NOVO: Campo para o último marcador
         timeUltimoMarcador: timeUltimoMarcador, // NOVO: Campo para o time do último marcador
-        historicoPontosDetalhado: logPontos, // NOVO: Salva o log de pontos da partida atual
+        tipoPonto: tipoPonto, // NOVO: Tipo de ponto
+        historicoPontosDetalhado: logPontosPartidaAtual, // NOVO: Salva o log de pontos da partida atual
         timestamp: window.serverTimestamp() // Firestore cria um timestamp no servidor
     })
     .then(() => { console.log("Placar atualizado no Firestore!"); })
@@ -1663,10 +1703,10 @@ window.embaralharFila = embaralharFila;
 window.mostrarHistorico = mostrarHistorico;
 window.fecharHistorico = fecharHistorico;
 window.toggleLock = toggleLock;
-window.marcarPonto = marcarPonto; // EXPOSTO
-window.adicionarPontoAvulso = adicionarPontoAvulso; // EXPOSTO
-window.removerPontoAvulso = removerPontoAvulso; // EXPOSTO
-window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore; // EXPOSTO
+window.marcarPonto = marcarPonto; 
+window.adicionarPontoAvulso = adicionarPontoAvulso; 
+window.removerPontoAvulso = removerPontoAvulso; 
+window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore;
 
 // Listener global para fechar modais (movido para fora de DOMContentLoaded para evitar duplicação)
 window.onclick = function(event) {
