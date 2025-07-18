@@ -9,17 +9,17 @@
     
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-      import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; // NOVO: Importa getDocs e deleteDoc
+      import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
       const firebaseConfig = {
-        apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-	authDomain: "controle-de-partidas.firebaseapp.com",
-	projectId: "controle-de-partidas",
-	storageBucket: "controle-de-partidas.firebasestorage.app",
-	messagingSenderId: "492501310950",
-	appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-	};
+        apiKey: "YOUR_API_KEY", // SUBSTITUA PELA SUA
+        authDomain: "controle-de-partidas.firebaseapp.com", // SUBSTITUA PELA SUA
+        projectId: "controle-de-partidas", // SUBSTITUA PELA SUA
+        storageBucket: "controle-de-partidas.appspot.com", // SUBSTITUA PELA SUA
+        messagingSenderId: "YOUR_SENDER_ID", // SUBSTITUA PELA SUA
+        appId: "YOUR_APP_ID", // SUBSTITUA PELA SUA
+      };
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -56,7 +56,7 @@
                   vitoriasTimeBEl.textContent = data.vitoriasB !== undefined ? data.vitoriasB : 0;
 
                   // Lógica do balão de último ponto
-                  if (data.ultimoJogadorMarcou && data.timeUltimoMarcador) {
+                  if (data.ultimoJogadorMarcou || (data.tipoPonto === 'ponto_avulso' && data.timeUltimoMarcador)) { // Corrigido para incluir ponto_avulso
                       let mensagem;
                       if (data.tipoPonto === 'ponto_avulso') {
                           mensagem = `+1 ponto Time ${data.timeUltimoMarcador}`; // Sem nome do jogador para avulso
@@ -70,7 +70,7 @@
                       ultimoPontoBalaoEl.classList.remove('animate-fade-in-out');
                       void ultimoPontoBalaoEl.offsetWidth; // Trigger reflow to restart animation
                       ultimoPontoBalaoEl.classList.add('animate-fade-in-out');
-                  } else if (data.tipoPonto === 'reset') { // NOVO: Se o tipoPonto for 'reset', limpa o balão
+                  } else if (data.tipoPonto === 'reset') { // Se o tipoPonto for 'reset', limpa o balão
                       ultimoPontoBalaoEl.classList.add('hidden');
                       ultimoPontoBalaoEl.textContent = '';
                   }
@@ -78,7 +78,7 @@
                       ultimoPontoBalaoEl.classList.add('hidden'); // Esconde se não há marcador ou tipo não reconhecido
                   }
 
-                  // NOVO: Renderiza o histórico de pontos da partida atual
+                  // Renderiza o histórico de pontos da partida atual
                   const historicoPontosDetalhado = data.historicoPontosDetalhado || [];
                   listaHistoricoPontosEl.innerHTML = historicoPontosDetalhado.map(ponto => {
                       const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
@@ -86,7 +86,6 @@
                       const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700'; 
                       
                       let descricaoPonto;
-                      // NOVO: Lógica para exibir ponto avulso no histórico detalhado
                       if (ponto.tipo === 'ponto_avulso') {
                           descricaoPonto = `Ponto Time ${ponto.time}`; // "Ponto Time A" ou "Ponto Time B"
                       } else {
@@ -177,7 +176,7 @@
           });
 
 
-          // Escutar Histórico de Partidas (AGORA SEM LIMITE DE 5 E ORDENADO POR DATA)
+          // Escutar Histórico de Partidas (AGORA SEM LIMITE)
           const q = query(historicoCollectionRef, orderBy("data", "desc")); // NOVO: Removido limit(5)
           onSnapshot(q, (querySnapshot) => {
               const listaHistoricoEl = document.getElementById('visualizarHistorico');
@@ -226,9 +225,8 @@
                                   const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
                                   
                                   let descricaoPonto;
-                                  // NOVO: Lógica para exibir ponto avulso no histórico detalhado
                                   if (ponto.tipo === 'ponto_avulso') {
-                                      descricaoPonto = `Ponto Time ${ponto.time}`; // "Ponto Time A" ou "Ponto Time B"
+                                      descricaoPonto = `Ponto Time ${ponto.time}`;
                                   } else {
                                       descricaoPonto = `Ponto ${ponto.jogador}`;
                                   }
@@ -241,7 +239,7 @@
                               }).join('');
                               if ((partida.detalhesPontos || []).length === 0) {
                                   ulDetalhes.innerHTML = '<li class="text-gray-500">Nenhum detalhe de ponto disponível.</li>';
-                               }
+                              }
                           } else {
                               toggleButton.textContent = "Ver detalhes dos pontos";
                           }
