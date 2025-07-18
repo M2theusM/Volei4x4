@@ -13,13 +13,13 @@
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
       const firebaseConfig = {
-        apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-	authDomain: "controle-de-partidas.firebaseapp.com",
-	projectId: "controle-de-partidas",
-	storageBucket: "controle-de-partidas.firebasestorage.app",
-	messagingSenderId: "492501310950",
-	appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-	};
+        apiKey: "YOUR_API_KEY", // SUBSTITUA PELA SUA
+        authDomain: "controle-de-partidas.firebaseapp.com", // SUBSTITUA PELA SUA
+        projectId: "controle-de-partidas", // SUBSTITUA PELA SUA
+        storageBucket: "controle-de-partidas.appspot.com", // SUBSTITUA PELA SUA
+        messagingSenderId: "YOUR_SENDER_ID", // SUBSTITUA PELA SUA
+        appId: "YOUR_APP_ID", // SUBSTITUA PELA SUA
+      };
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -57,7 +57,11 @@
 
                   // Lógica do balão de último ponto
                   if (data.ultimoJogadorMarcou && data.timeUltimoMarcador) {
-                      const mensagem = `+1 ponto ${data.timeUltimoMarcador}: ${data.ultimoJogadorMarcou}`;
+                      let mensagem = `+1 ponto ${data.timeUltimoMarcador}: ${data.ultimoJogadorMarcou}`;
+                      // NOVO: Condição para ponto avulso no balão
+                      if (data.tipoPonto === 'ponto_avulso') {
+                          mensagem = `+1 ponto Time ${data.timeUltimoMarcador}`; // Sem nome do jogador para avulso
+                      }
                       ultimoPontoBalaoEl.textContent = mensagem;
                       ultimoPontoBalaoEl.classList.remove('hidden');
                       
@@ -76,9 +80,12 @@
                       const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
                       const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700'; 
                       
-                      let descricaoPonto = `Ponto ${ponto.jogador}`;
-                      if (ponto.tipo === 'ponto_por_erro') {
-                          descricaoPonto = `Ponto por erro para Time ${ponto.time}`;
+                      let descricaoPonto;
+                      // NOVO: Lógica para exibir ponto avulso no histórico detalhado
+                      if (ponto.tipo === 'ponto_avulso') {
+                          descricaoPonto = `Ponto Time ${ponto.time}`; // "Ponto Time A" ou "Ponto Time B"
+                      } else {
+                          descricaoPonto = `Ponto ${ponto.jogador}`;
                       }
 
                       return `
@@ -212,11 +219,12 @@
                                   const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
                                   const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
                                   
-                                  let descricaoPonto = `Ponto ${ponto.jogador}`;
-                                  if (ponto.tipo === 'ponto_por_erro') {
-                                      descricaoPonto = `Ponto por erro para Time ${ponto.time}`;
-                                  } else if (ponto.tipo === 'ponto_avulso') { // Adicionado para ponto avulso
-                                      descricaoPonto = `Ponto avulso para Time ${ponto.time}`;
+                                  let descricaoPonto;
+                                  // NOVO: Lógica para exibir ponto avulso no histórico detalhado
+                                  if (ponto.tipo === 'ponto_avulso') {
+                                      descricaoPonto = `Ponto Time ${ponto.time}`; // "Ponto Time A" ou "Ponto Time B"
+                                  } else {
+                                      descricaoPonto = `Ponto ${ponto.jogador}`;
                                   }
 
                                   return `
