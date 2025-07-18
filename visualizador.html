@@ -12,51 +12,99 @@
       import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
-       const firebaseConfig = {
-		apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-		authDomain: "controle-de-partidas.firebaseapp.com",
-		projectId: "controle-de-partidas",
-		storageBucket: "controle-de-partidas.firebasestorage.app",
-		messagingSenderId: "492501310950",
-		appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-		};
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY", // SUBSTITUA PELA SUA
+        authDomain: "controle-de-partidas.firebaseapp.com", // SUBSTITUA PELA SUA
+        projectId: "controle-de-partidas", // SUBSTITUA PELA SUA
+        storageBucket: "controle-de-partidas.appspot.com", // SUBSTITUA PELA SUA
+        messagingSenderId: "YOUR_SENDER_ID", // SUBSTITUA PELA SUA
+        appId: "YOUR_APP_ID", // SUBSTITUA PELA SUA
+      };
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
+      // Variáveis locais para armazenar os dados recebidos do Firestore
+      let jogadoresStatsLocal = {};
+      let estrelasRegistradasLocal = [];
+      let jogadoresTravadosLocal = {}; // NOVO: Para estado de travado no visualizador
+
       // --- Lógica para ler o placar em tempo real ---
       document.addEventListener('DOMContentLoaded', () => {
-          const placarDocRef = doc(db, 'statusJogo', 'placarAtual'); // MESMA REFERÊNCIA DO SITE DO JOGO
-          const filasDocRef = doc(db, 'statusJogo', 'filasAtuais'); // MESMA REFERÊNCIA DO SITE DO JOGO
-          const historicoCollectionRef = collection(db, 'historicoPartidas'); // MESMA REFERÊNCIA DO SITE DO JOGO
-          const statsDocRef = doc(db, 'statusJogo', 'statsJogadores'); // NOVO: Referência para os stats globais
-
-          let jogadoresStatsLocal = {}; // Para calcular ranking e destaques localmente
-          let estrelasRegistradasLocal = []; // Para saber quem é estrela no visualizador
+          const placarDocRef = doc(db, 'statusJogo', 'placarAtual');
+          const filasDocRef = doc(db, 'statusJogo', 'filasAtuais');
+          const historicoCollectionRef = collection(db, 'historicoPartidas');
+          const statsDocRef = doc(db, 'statusJogo', 'statsJogadores'); 
 
           // Escutar Placar Atual
           onSnapshot(placarDocRef, (docSnap) => {
               const placarTimeAEl = document.getElementById('placarExibirA');
               const placarTimeBEl = document.getElementById('placarExibirB');
+              const vitoriasTimeAEl = document.getElementById('vitoriasExibirA');
+              const vitoriasTimeBEl = document.getElementById('vitoriasExibirB');
+              const ultimoPontoBalaoEl = document.getElementById('ultimoPontoBalao');
+              const listaHistoricoPontosEl = document.getElementById('listaHistoricoPontos');
+
 
               if (docSnap.exists()) {
                   const data = docSnap.data();
+                  
+                  // Atualiza placar principal
                   placarTimeAEl.textContent = data.timeA !== undefined ? data.timeA : 0;
                   placarTimeBEl.textContent = data.timeB !== undefined ? data.timeB : 0;
-                  document.getElementById('vitoriasExibirA').textContent = data.vitoriasA !== undefined ? data.vitoriasA : 0;
-                  document.getElementById('vitoriasExibirB').textContent = data.vitoriasB !== undefined ? data.vitoriasB : 0;
-                  console.log("Placar ao vivo atualizado:", data);
+                  vitoriasTimeAEl.textContent = data.vitoriasA !== undefined ? data.vitoriasA : 0;
+                  vitoriasTimeBEl.textContent = data.vitoriasB !== undefined ? data.vitoriasB : 0;
+
+                  // Lógica do balão de último ponto
+                  if (data.ultimoJogadorMarcou && data.timeUltimoMarcador) {
+                      const mensagem = `+1 ponto ${data.timeUltimoMarcador}: ${data.ultimoJogadorMarcou}`;
+                      ultimoPontoBalaoEl.textContent = mensagem;
+                      ultimoPontoBalaoEl.classList.remove('hidden');
+                      
+                      // Reinicia a animação
+                      ultimoPontoBalaoEl.classList.remove('animate-fade-in-out');
+                      void ultimoPontoBalaoEl.offsetWidth; // Trigger reflow to restart animation
+                      ultimoPontoBalaoEl.classList.add('animate-fade-in-out');
+                  } else {
+                      ultimoPontoBalaoEl.classList.add('hidden'); // Esconde se não há marcador
+                  }
+
+                  // NOVO: Renderiza o histórico de pontos da partida atual
+                  const historicoPontosDetalhado = data.historicoPontosDetalhado || [];
+                  listaHistoricoPontosEl.innerHTML = historicoPontosDetalhado.map(ponto => {
+                      const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
+                      const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
+                      const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700'; 
+                      
+                      let descricaoPonto = `Ponto ${ponto.jogador}`;
+                      if (ponto.tipo === 'ponto_por_erro') {
+                          descricaoPonto = `Ponto por erro para Time ${ponto.time}`;
+                      }
+
+                      return `
+                        <li class="text-gray-700">
+                            <span class="font-bold ${corTimeA}">${ponto.placarA}</span> x <span class="font-bold ${corTimeB}">${ponto.placarB}</span> - <span class="${corVencedorPonto}">${descricaoPonto}</span>
+                        </li>
+                      `;
+                  }).join('');
+                  if (historicoPontosDetalhado.length === 0) {
+                      listaHistoricoPontosEl.innerHTML = '<li class="text-gray-500">Nenhum ponto registrado nesta partida.</li>';
+                  }
+
+                  console.log("Placar ao vivo e histórico de pontos atualizados:", data);
               } else {
                   placarTimeAEl.textContent = 0;
                   placarTimeBEl.textContent = 0;
-                  document.getElementById('vitoriasExibirA').textContent = 0;
-                  document.getElementById('vitoriasExibirB').textContent = 0;
+                  vitoriasTimeAEl.textContent = 0;
+                  vitoriasTimeBEl.textContent = 0;
+                  ultimoPontoBalaoEl.classList.add('hidden');
+                  listaHistoricoPontosEl.innerHTML = '<li class="text-gray-500">Nenhum ponto registrado nesta partida.</li>';
                   console.log("Documento do placar não encontrado ou resetado.");
               }
           }, (error) => {
               console.error("Erro ao escutar o placar ao vivo:", error);
-              placarTimeAEl.textContent = "Erro";
-              placarTimeBEl.textContent = "Erro";
+              document.getElementById('placarExibirA').textContent = "Erro";
+              document.getElementById('placarExibirB').textContent = "Erro";
           });
 
           // Escutar Filas Atuais
@@ -68,13 +116,13 @@
                   const data = docSnap.data();
                   const filaGeral = data.filaGeral || [];
                   const filaEstrela = data.filaEstrela || [];
-                  const jogadoresTravados = data.jogadoresTravados || {};
+                  jogadoresTravadosLocal = data.jogadoresTravados || {}; // Atualiza a variável local
                   estrelasRegistradasLocal = data.estrelasRegistradas || []; // Atualiza a variável local
 
                   filaGeralEl.innerHTML = filaGeral.map((j, i) => `
                     <li class="flex items-center py-1 text-gray-700">
                         ${i + 1}. ${j} ${estrelasRegistradasLocal.includes(j) ? '⭐' : ''} 
-                        ${jogadoresTravados[j] ? '<i class="fas fa-lock text-red-500 ml-1"></i>' : ''}
+                        ${jogadoresTravadosLocal[j] ? '<i class="fas fa-lock text-red-500 ml-1"></i>' : ''}
                     </li>
                   `).join('');
                   if (filaGeral.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia.</li>';
@@ -82,7 +130,7 @@
                   filaEstrelaEl.innerHTML = filaEstrela.map((j, i) => `
                     <li class="flex items-center py-1 text-gray-700">
                         ${i + 1}. ${j} ⭐ 
-                        ${jogadoresTravados[j] ? '<i class="fas fa-lock text-red-500 ml-1"></i>' : ''}
+                        ${jogadoresTravadosLocal[j] ? '<i class="fas fa-lock text-red-500 ml-1"></i>' : ''}
                     </li>
                   `).join('');
                   if (filaEstrela.length === 0) filaEstrelaEl.innerHTML = '<li class="text-gray-500">Fila estrela vazia.</li>';
@@ -97,7 +145,7 @@
               console.error("Erro ao escutar filas:", error);
           });
 
-          // NOVO: Escutar Jogadores Stats Globais (para Ranking e Destaques)
+          // Escutar Jogadores Stats Globais (para Ranking e Destaques)
           onSnapshot(statsDocRef, (docSnap) => {
               if (docSnap.exists()) {
                   const data = docSnap.data();
@@ -128,6 +176,7 @@
                   querySnapshot.forEach((doc) => {
                       const partida = doc.data();
                       const li = document.createElement('li');
+                      
                       let backgroundClass = '';
                       if (partida.vencedor === 'Time A') backgroundClass = 'bg-green-100 border-green-200';
                       else if (partida.vencedor === 'Time B') backgroundClass = 'bg-blue-100 border-blue-200';
@@ -141,7 +190,48 @@
                           <p class="text-sm text-gray-600">Time A: ${partida.timeA ? partida.timeA.join(', ') : 'N/A'}</p>
                           <p class="text-sm text-gray-600">Time B: ${partida.timeB ? partida.timeB.join(', ') : 'N/A'}</p>
                           <p class="text-xs text-gray-500">${dataFormatada}</p>
+                          <button class="toggle-detalhes text-blue-500 hover:underline mt-2">Ver detalhes dos pontos</button>
+                          <div class="detalhes-pontos-partida mt-3 pt-3 border-t border-gray-200 hidden">
+                              <h4 class="font-bold text-gray-700 mb-2">Sequência de Pontos:</h4>
+                              <ul class="list-disc list-inside text-sm space-y-1"></ul>
+                          </div>
                       `;
+                      
+                      // Adiciona listener para expandir/colapsar os detalhes dos pontos
+                      const toggleButton = li.querySelector('.toggle-detalhes');
+                      const detalhesDiv = li.querySelector('.detalhes-pontos-partida');
+                      const ulDetalhes = detalhesDiv.querySelector('ul');
+
+                      toggleButton.addEventListener('click', () => {
+                          detalhesDiv.classList.toggle('hidden');
+                          if (!detalhesDiv.classList.contains('hidden')) {
+                              toggleButton.textContent = "Ocultar detalhes dos pontos";
+                              // Renderiza os pontos detalhados APENAS quando a div é expandida
+                              ulDetalhes.innerHTML = (partida.detalhesPontos || []).map(ponto => {
+                                  const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
+                                  const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
+                                  const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
+                                  
+                                  let descricaoPonto = `Ponto ${ponto.jogador}`;
+                                  if (ponto.tipo === 'ponto_por_erro') {
+                                      descricaoPonto = `Ponto por erro para Time ${ponto.time}`;
+                                  } else if (ponto.tipo === 'ponto_avulso') { // Adicionado para ponto avulso
+                                      descricaoPonto = `Ponto avulso para Time ${ponto.time}`;
+                                  }
+
+                                  return `
+                                    <li>
+                                        <span class="font-bold ${corTimeA}">${ponto.placarA}</span> x <span class="font-bold ${corTimeB}">${ponto.placarB}</span> - <span class="${corVencedorPonto}">${descricaoPonto}</span>
+                                    </li>
+                                  `;
+                              }).join('');
+                              if ((partida.detalhesPontos || []).length === 0) {
+                                  ulDetalhes.innerHTML = '<li class="text-gray-500">Nenhum detalhe de ponto disponível.</li>';
+                              }
+                          } else {
+                              toggleButton.textContent = "Ver detalhes dos pontos";
+                          }
+                      });
                       listaHistoricoEl.appendChild(li);
                   });
               }
@@ -271,7 +361,19 @@
                     <div class="text-sm font-medium text-gray-600">Vitórias: <span id="vitoriasExibirB">0</span></div>
                 </div>
             </div>
-        </div>
+            
+            <div id="ultimoPontoBalao" class="mt-6 p-3 bg-indigo-500 text-white font-bold text-xl rounded-lg shadow-md hidden animate-fade-in-out">
+                </div>
+            <div class="historico-pontos-partida mt-6 text-left border-t border-gray-200 pt-4">
+                <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">Histórico de Pontos da Partida</h3>
+                <div class="flex justify-between font-semibold text-gray-600 mb-2 px-2">
+                    <span>TIME A</span>
+                    <span>TIME B</span>
+                </div>
+                <ul id="listaHistoricoPontos" class="space-y-1">
+                    </ul>
+            </div>
+            </div>
 
         <div class="bg-white p-6 rounded-xl shadow-lg mt-5">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Fila Geral</h2>
