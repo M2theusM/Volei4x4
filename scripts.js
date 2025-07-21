@@ -856,7 +856,7 @@ function registrarVitoria(vencedor) {
 
     placarA = 0;
     placarB = 0;
-    logPontosPartidaAtual = []; // NOVO: Zera o log de pontos da partida atual após finalizar a partida.
+    logPontosPartidaAtual = []; // Zera o log de pontos da partida atual após finalizar a partida.
 
     // Salvamento explícito e final de TODOS os estados relevantes após uma vitória.
     const allKnownPlayersAfterVictory = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
@@ -880,8 +880,6 @@ function registrarVitoria(vencedor) {
 
     atualizarTela();
 }
-
-
 function resetarPlacar() {
     salvarEstadoAtual();
     placarA = 0;
