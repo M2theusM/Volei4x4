@@ -227,7 +227,7 @@ function recomporTimesAposConfiguracao() {
                     timeA.push(estrelaDisponivel);
                     filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
                 } else {
-                    break;
+                    break; // Não há jogadores disponíveis
                 }
             }
         }
@@ -334,7 +334,7 @@ function iniciarNovoJogo() {
     vitoriasB = 0;
     placarA = 0;
     placarB = 0;
-    logPontosPartidaAtual = []; // NOVO: Limpa o log de pontos para o novo jogo
+    logPontosPartidaAtual = []; // Limpa o log de pontos para o novo jogo
     // Não resetar jogadoresStats e jogadoresTravados aqui,
     // eles serão carregados do localStorage em carregarDadosIniciais()
     // e modificados dinamicamente.
@@ -343,7 +343,6 @@ function iniciarNovoJogo() {
     if (!primeiraInicializacaoConcluida) {
         // Primeira inicialização: Filas e times começam vazios
         // Popula as filas padrão SOMENTE SE elas estiverem realmente vazias
-        // Isso evita adicionar nomes duplicados se o usuário já adicionou manualmente
         if (filaGeral.length === 0 && filaEstrela.length === 0) {
             filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela","Rafael", "Wendel"];
             filaEstrela = ["Daniele", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
@@ -741,7 +740,10 @@ function registrarVitoria(vencedor) {
         placarFinalB: placarB,
         vencedor: vencedor === 'ambosSaem' ? 'Empate/Ambos Saíram' : `Time ${vencedor}`,
         data: new Date().toLocaleString('pt-BR'),
-        detalhesPontos: [...logPontosPartidaAtual] // NOVO: Adiciona o log de pontos da partida
+        detalhesPontos: [...logPontosPartidaAtual], // NOVO: Adiciona o log de pontos da partida
+        // NOVO: Adiciona timestamp do início e fim da partida a partir do logPontosPartidaAtual
+        tempoInicioPartida: logPontosPartidaAtual.length > 0 ? logPontosPartidaAtual[0].timestampLocal : null,
+        tempoFimPartida: logPontosPartidaAtual.length > 0 ? logPontosPartidaAtual[logPontosPartidaAtual.length - 1].timestampLocal : null
     };
     historicoPartidas.unshift(partidaAtualParaHistorico);
     // localStorage.setItem('historicoPartidas', JSON.stringify(historicoPartidas)); // Se quiser persistir o histórico localmente
@@ -880,16 +882,18 @@ function registrarVitoria(vencedor) {
 
     atualizarTela();
 }
+
+
 function resetarPlacar() {
     salvarEstadoAtual();
     placarA = 0;
     placarB = 0;
     vitoriasA = 0;
     vitoriasB = 0;
-    logPontosPartidaAtual = []; // NOVO: Limpa o log de pontos se o placar for resetado
+    logPontosPartidaAtual = []; // Limpa o log de pontos se o placar for resetado
     atualizarTela();
-    // NOVO: Salva o estado do jogo no Firestore após reset de placar
-    salvarEstadoDoJogoNoFirestore(null, null, 'reset'); // NOVO: Passa 'reset' como tipoPonto
+    // Salva o estado do jogo no Firestore após reset de placar
+    salvarEstadoDoJogoNoFirestore(null, null, 'reset'); 
 }
 
 function adicionarParticipante(tipoFila) {
@@ -1497,7 +1501,7 @@ function mostrarHistorico() {
     } else {
         const historicoInvertido = [...historicoPartidas].reverse();    
         historicoInvertido.forEach((partida) => {    
-            const numeroPartidaOriginal = historicoInvertido.length - (historicoInvertido.indexOf(partida) + 1); // NOVO: Calcula número correto
+            const numeroPartidaOriginal = historicoInvertido.length - (historicoInvertido.indexOf(partida) + 1); // Calcula número correto
 
             const li = document.createElement('li');
             let backgroundClass = '';
@@ -1633,7 +1637,7 @@ function redefinirTudo() {
 }
 
 // NOVO: Função auxiliar para salvar o placar atual e o estado das filas no Firestore
-function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal') { // Adiciona tipoPonto aqui
+function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal', logPontos = logPontosPartidaAtual) { // Adiciona tipoPonto aqui
     // Acessa as variáveis globais do Firebase inicializadas no index.html
     if (!window.db) { 
         console.warn("Firestore não inicializado. Não foi possível salvar o estado do jogo.");
@@ -1650,10 +1654,13 @@ function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador
         timeB: placarB,
         vitoriasA: vitoriasA, // Inclua as vitórias consecutivas também
         vitoriasB: vitoriasB,
-        ultimoJogadorMarcou: ultimoMarcador, // NOVO: Campo para o último marcador
-        timeUltimoMarcador: timeUltimoMarcador, // NOVO: Campo para o time do último marcador
-        tipoPonto: tipoPonto, // NOVO: Tipo de ponto
-        historicoPontosDetalhado: logPontosPartidaAtual, // NOVO: Salva o log de pontos da partida atual
+        // NOVO: Adiciona jogadoresTimeA e jogadoresTimeB
+        jogadoresTimeA: timeA, 
+        jogadoresTimeB: timeB,
+        ultimoJogadorMarcou: ultimoMarcador, // Campo para o último marcador
+        timeUltimoMarcador: timeUltimoMarcador, // Campo para o time do último marcador
+        tipoPonto: tipoPonto, // Tipo de ponto
+        historicoPontosDetalhado: logPontos, // Salva o log de pontos da partida atual
         timestamp: window.serverTimestamp() // Firestore cria um timestamp no servidor
     })
     .then(() => { console.log("Placar atualizado no Firestore!"); })
@@ -1734,7 +1741,7 @@ iniciarNovoJogo(); // Esta chamada agora gerencia o comportamento de "primeira v
 historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
 atualizarTela();    
 
-// NOVO: Expor funções globais para o HTML (onclick, etc.)
+// Expor funções globais para o HTML (onclick, etc.)
 window.salvarConfiguracoes = salvarConfiguracoes;
 window.redefinirTudo = redefinirTudo;
 window.abrirConfiguracoes = abrirConfiguracoes;
