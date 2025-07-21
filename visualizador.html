@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='90%' style='font-size:90px;text-anchor:middle;'>🏆</text></svg>" type="image/svg+xml">
     <title>Placar e Filas ao Vivo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -68,6 +67,10 @@
               const ultimoPontoBalaoEl = document.getElementById('ultimoPontoBalao');
               const listaHistoricoPontosEl = document.getElementById('listaHistoricoPontos');
 
+              // NOVO: Elementos para os nomes dos jogadores dos times
+              const timeAListEl = document.getElementById('timeAVisualizador');
+              const timeBListEl = document.getElementById('timeBVisualizador');
+
 
               if (docSnap.exists()) {
                   const data = docSnap.data();
@@ -78,11 +81,19 @@
                   vitoriasTimeAEl.textContent = data.vitoriasA !== undefined ? data.vitoriasA : 0;
                   vitoriasTimeBEl.textContent = data.vitoriasB !== undefined ? data.vitoriasB : 0;
 
+                  // NOVO: Atualiza os jogadores em quadra
+                  const jogadoresTimeA = data.jogadoresTimeA || []; // Supondo que você enviará isso do controle
+                  const jogadoresTimeB = data.jogadoresTimeB || []; // Supondo que você enviará isso do controle
+
+                  timeAListEl.innerHTML = jogadoresTimeA.map(j => `<li>${j} ${estrelasRegistradasLocal.includes(j) ? '⭐' : ''}</li>`).join('');
+                  timeBListEl.innerHTML = jogadoresTimeB.map(j => `<li>${j} ${estrelasRegistradasLocal.includes(j) ? '⭐' : ''}</li>`).join('');
+
+
                   // Lógica do balão de último ponto
-                  if (data.ultimoJogadorMarcou || (data.tipoPonto === 'ponto_avulso' && data.timeUltimoMarcador)) { // Corrigido para incluir ponto_avulso
+                  if (data.ultimoJogadorMarcou || (data.tipoPonto === 'ponto_avulso' && data.timeUltimoMarcador)) {
                       let mensagem;
                       if (data.tipoPonto === 'ponto_avulso') {
-                          mensagem = `+1 ponto Time ${data.timeUltimoMarcador}`; // Sem nome do jogador para avulso
+                          mensagem = `+1 ponto Time ${data.timeUltimoMarcador}`;
                       } else {
                           mensagem = `+1 ponto ${data.timeUltimoMarcador}: ${data.ultimoJogadorMarcou}`;
                       }
@@ -91,14 +102,14 @@
                       
                       // Reinicia a animação
                       ultimoPontoBalaoEl.classList.remove('animate-fade-in-out');
-                      void ultimoPontoBalaoEl.offsetWidth; // Trigger reflow to restart animation
+                      void ultimoPontoBalaoEl.offsetWidth; 
                       ultimoPontoBalaoEl.classList.add('animate-fade-in-out');
-                  } else if (data.tipoPonto === 'reset') { // Se o tipoPonto for 'reset', limpa o balão
+                  } else if (data.tipoPonto === 'reset') {
                       ultimoPontoBalaoEl.classList.add('hidden');
                       ultimoPontoBalaoEl.textContent = '';
                   }
                   else {
-                      ultimoPontoBalaoEl.classList.add('hidden'); // Esconde se não há marcador ou tipo não reconhecido
+                      ultimoPontoBalaoEl.classList.add('hidden');
                   }
 
                   // Renderiza o histórico de pontos da partida atual
@@ -110,7 +121,7 @@
                       
                       let descricaoPonto;
                       if (ponto.tipo === 'ponto_avulso') {
-                          descricaoPonto = `Ponto Time ${ponto.time}`; // "Ponto Time A" ou "Ponto Time B"
+                          descricaoPonto = `Ponto Time ${ponto.time}`;
                       } else {
                           descricaoPonto = `Ponto ${ponto.jogador}`;
                       }
@@ -131,6 +142,8 @@
                   placarTimeBEl.textContent = 0;
                   vitoriasTimeAEl.textContent = 0;
                   vitoriasTimeBEl.textContent = 0;
+                  timeAListEl.innerHTML = ''; // Limpa jogadores
+                  timeBListEl.innerHTML = ''; // Limpa jogadores
                   ultimoPontoBalaoEl.classList.add('hidden');
                   listaHistoricoPontosEl.innerHTML = '<li class="text-gray-500">Nenhum ponto registrado nesta partida.</li>';
                   console.log("Documento do placar não encontrado ou resetado.");
@@ -166,7 +179,7 @@
                       return `
                         <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
                             ${i + 1}. ${j} ${estrelasRegistradasLocal.includes(j) ? '⭐' : ''} 
-                            </li>
+                        </li>
                       `;
                   }).join('');
                   if (filaGeralFiltrada.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia ou todos travados.</li>';
@@ -178,7 +191,7 @@
                       return `
                         <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
                             ${i + 1}. ${j} ⭐ 
-                            </li>
+                        </li>
                       `;
                   }).join('');
                   if (filaEstrelaFiltrada.length === 0) filaEstrelaEl.innerHTML = '<li class="text-gray-500">Fila estrela vazia ou todos travados.</li>';
@@ -414,11 +427,15 @@
                     <div class="text-2xl font-semibold text-green-700">TIME A</div>
                     <div id="placarExibirA" class="text-7xl font-extrabold text-green-600">0</div>
                     <div class="text-sm font-medium text-gray-600">Vitórias: <span id="vitoriasExibirA">0</span></div>
+                    <ul id="timeAVisualizador" class="text-sm text-gray-700 list-none mt-2 space-y-0.5">
+                        </ul>
                 </div>
                 <div class="text-center">
                     <div class="text-2xl font-semibold text-blue-700">TIME B</div>
                     <div id="placarExibirB" class="text-7xl font-extrabold text-blue-600">0</div>
                     <div class="text-sm font-medium text-gray-600">Vitórias: <span id="vitoriasExibirB">0</span></div>
+                    <ul id="timeBVisualizador" class="text-sm text-gray-700 list-none mt-2 space-y-0.5">
+                        </ul>
                 </div>
             </div>
             
