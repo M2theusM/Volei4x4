@@ -7,19 +7,41 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
+    <style>
+        /* Estilos para o balão de último ponto */
+        .animate-fade-in-out {
+            animation: fadeOut 3s forwards; /* 3 segundos de duração */
+            opacity: 0; /* Começa invisível */
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 0; transform: translateY(20px); } /* Inicia de baixo e transparente */
+            20% { opacity: 1; transform: translateY(0); } /* Sobe e fica visível rapidamente */
+            80% { opacity: 1; transform: translateY(0); } /* Permanece visível */
+            100% { opacity: 0; transform: translateY(-20px); } /* Some para cima */
+        }
+
+        /* Estilo para destacar os próximos jogadores */
+        .proximo-jogador-geral-1 { background-color: #f0f9ff; } /* bg-blue-50 */
+        .proximo-jogador-geral-2 { background-color: #e0f2fe; } /* bg-blue-100 */
+        .proximo-jogador-geral-3 { background-color: #bfdbfe; } /* bg-blue-200 */
+
+        .proximo-jogador-estrela { background-color: #fffbeb; } /* bg-yellow-50 */
+    </style>
+
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
       import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
       const firebaseConfig = {
-        apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-		authDomain: "controle-de-partidas.firebaseapp.com",
-		projectId: "controle-de-partidas",
-		storageBucket: "controle-de-partidas.firebasestorage.app",
-		messagingSenderId: "492501310950",
-		appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-		};
+        apiKey: "YOUR_API_KEY", // SUBSTITUA PELA SUA
+        authDomain: "controle-de-partidas.firebaseapp.com", // SUBSTITUA PELA SUA
+        projectId: "controle-de-partidas", // SUBSTITUA PELA SUA
+        storageBucket: "controle-de-partidas.appspot.com", // SUBSTITUA PELA SUA
+        messagingSenderId: "YOUR_SENDER_ID", // SUBSTITUA PELA SUA
+        appId: "YOUR_APP_ID", // SUBSTITUA PELA SUA
+      };
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -130,21 +152,35 @@
                   jogadoresTravadosLocal = data.jogadoresTravados || {}; // Atualiza a variável local
                   estrelasRegistradasLocal = data.estrelasRegistradas || []; // Atualiza a variável local
 
-                  filaGeralEl.innerHTML = filaGeral.map((j, i) => `
-                    <li class="flex items-center py-1 text-gray-700">
-                        ${i + 1}. ${j} ${estrelasRegistradasLocal.includes(j) ? '⭐' : ''} 
-                        ${jogadoresTravadosLocal[j] ? '<i class="fas fa-lock text-red-500 ml-1"></i>' : ''}
-                    </li>
-                  `).join('');
-                  if (filaGeral.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia.</li>';
+                  // NOVO: Filtrar jogadores travados e aplicar classes de destaque
+                  const filaGeralFiltrada = filaGeral.filter(j => !jogadoresTravadosLocal[j]);
+                  const filaEstrelaFiltrada = filaEstrela.filter(j => !jogadoresTravadosLocal[j]);
 
-                  filaEstrelaEl.innerHTML = filaEstrela.map((j, i) => `
-                    <li class="flex items-center py-1 text-gray-700">
-                        ${i + 1}. ${j} ⭐ 
-                        ${jogadoresTravadosLocal[j] ? '<i class="fas fa-lock text-red-500 ml-1"></i>' : ''}
-                    </li>
-                  `).join('');
-                  if (filaEstrela.length === 0) filaEstrelaEl.innerHTML = '<li class="text-gray-500">Fila estrela vazia.</li>';
+                  filaGeralEl.innerHTML = filaGeralFiltrada.map((j, i) => { // Usa filaGeralFiltrada
+                      let destaqueClass = '';
+                      if (i === 0) destaqueClass = 'proximo-jogador-geral-1';
+                      else if (i === 1) destaqueClass = 'proximo-jogador-geral-2';
+                      else if (i === 2) destaqueClass = 'proximo-jogador-geral-3';
+
+                      return `
+                        <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
+                            ${i + 1}. ${j} ${estrelasRegistradasLocal.includes(j) ? '⭐' : ''} 
+                            </li>
+                      `;
+                  }).join('');
+                  if (filaGeralFiltrada.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia ou todos travados.</li>';
+
+                  filaEstrelaEl.innerHTML = filaEstrelaFiltrada.map((j, i) => { // Usa filaEstrelaFiltrada
+                      let destaqueClass = '';
+                      if (i === 0) destaqueClass = 'proximo-jogador-estrela'; // Apenas o primeiro da estrela
+                      
+                      return `
+                        <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
+                            ${i + 1}. ${j} ⭐ 
+                            </li>
+                      `;
+                  }).join('');
+                  if (filaEstrelaFiltrada.length === 0) filaEstrelaEl.innerHTML = '<li class="text-gray-500">Fila estrela vazia ou todos travados.</li>';
 
                   console.log("Filas atualizadas:", data);
               } else {
@@ -177,7 +213,7 @@
 
 
           // Escutar Histórico de Partidas (AGORA SEM LIMITE)
-          const q = query(historicoCollectionRef, orderBy("data", "desc")); // NOVO: Removido limit(5)
+          const q = query(historicoCollectionRef, orderBy("data", "desc")); // Removido limit(5)
           onSnapshot(q, (querySnapshot) => {
               const listaHistoricoEl = document.getElementById('visualizarHistorico');
               listaHistoricoEl.innerHTML = '';
@@ -195,13 +231,24 @@
 
                       // Converte Firestore Timestamp para objeto Date e formata
                       const dataFormatada = partida.data ? new Date(partida.data.toDate()).toLocaleString('pt-BR') : 'N/A';
+                      
+                      // NOVO: Cálculo do tempo de jogo
+                      let tempoDeJogo = 'N/A';
+                      if (partida.tempoInicioPartida && partida.tempoFimPartida) {
+                          const inicio = new Date(partida.tempoInicioPartida);
+                          const fim = new Date(partida.tempoFimPartida);
+                          const duracaoMs = fim - inicio;
+                          const minutos = Math.floor(duracaoMs / 60000);
+                          const segundos = Math.floor((duracaoMs % 60000) / 1000);
+                          tempoDeJogo = `${minutos}min ${segundos}s`;
+                      }
 
                       li.className = `p-3 rounded-lg shadow-sm border ${backgroundClass} mb-2`;
                       li.innerHTML = `
                           <p class="font-semibold text-gray-800">${partida.placarFinalA} x ${partida.placarFinalB} - ${partida.vencedor}</p>
                           <p class="text-sm text-gray-600">Time A: ${partida.timeA ? partida.timeA.join(', ') : 'N/A'}</p>
                           <p class="text-sm text-gray-600">Time B: ${partida.timeB ? partida.timeB.join(', ') : 'N/A'}</p>
-                          <p class="text-xs text-gray-500">${dataFormatada}</p>
+                          <p class="text-xs text-gray-500">${dataFormatada} | Duração: ${tempoDeJogo}</p>
                           <button class="toggle-detalhes text-blue-500 hover:underline mt-2">Ver detalhes dos pontos</button>
                           <div class="detalhes-pontos-partida mt-3 pt-3 border-t border-gray-200 hidden">
                               <h4 class="font-bold text-gray-700 mb-2">Sequência de Pontos:</h4>
@@ -239,7 +286,7 @@
                               }).join('');
                               if ((partida.detalhesPontos || []).length === 0) {
                                   ulDetalhes.innerHTML = '<li class="text-gray-500">Nenhum detalhe de ponto disponível.</li>';
-                              }
+                               }
                           } else {
                               toggleButton.textContent = "Ver detalhes dos pontos";
                           }
