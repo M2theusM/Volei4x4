@@ -1523,7 +1523,46 @@ async function redefinirTudo() {
         location.reload(); 
     }
 }
+// Adicione esta função ao scripts.js
+function setupSortableLists() {
+    new Sortable(document.getElementById('filaGeral'), {
+        animation: 150,
+        handle: '.drag-handle', // Manipulador de arrastar
+        onEnd: function (evt) {
+            // Esta função é chamada quando uma operação de arrastar e soltar termina.
+            // Você precisará atualizar seu array filaGeral com base na nova ordem.
+            // Em seguida, salve o estado e atualize a exibição.
+            const itemEl = evt.item;  // HTMLElement arrastado
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
 
+            // Realiza a movimentação no array real
+            const [movedItem] = filaGeral.splice(oldIndex, 1);
+            filaGeral.splice(newIndex, 0, movedItem);
+
+            localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+            salvarEstadoDoJogoNoFirestore(); // Salva no Firestore se integrado
+            atualizarTela(); // Renderiza novamente as listas para refletir as mudanças
+        }
+    });
+
+    new Sortable(document.getElementById('filaEstrela'), {
+        animation: 150,
+        handle: '.drag-handle', // Manipulador de arrastar
+        onEnd: function (evt) {
+            const itemEl = evt.item;
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+
+            const [movedItem] = filaEstrela.splice(oldIndex, 1);
+            filaEstrela.splice(newIndex, 0, movedItem);
+
+            localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+            salvarEstadoDoJogoNoFirestore(); // Salva no Firestore se integrado
+            atualizarTela();
+        }
+    });
+}
 function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal') {
     if (!window.db) { 
         console.warn("Firestore não inicializado. Não foi possível salvar o estado do jogo.");
