@@ -34,13 +34,14 @@
       import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
+      const firebaseConfig = {
         apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-        authDomain: "controle-de-partidas.firebaseapp.com",
-        projectId: "controle-de-partidas",
-        storageBucket: "controle-de-partidas.firebasestorage.app",
-        messagingSenderId: "492501310950",
-        appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-        };
+		authDomain: "controle-de-partidas.firebaseapp.com",
+		projectId: "controle-de-partidas",
+		storageBucket: "controle-de-partidas.firebasestorage.app",
+		messagingSenderId: "492501310950",
+		appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
+		};
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -79,7 +80,7 @@
                   vitoriasTimeAEl.textContent = data.vitoriasA !== undefined ? data.vitoriasA : 0;
                   vitoriasTimeBEl.textContent = data.vitoriasB !== undefined ? data.vitoriasB : 0;
 
-                  // NOVO: Atualiza os jogadores em quadra
+                  // Atualiza os jogadores em quadra
                   const jogadoresTimeA = data.jogadoresTimeA || []; 
                   const jogadoresTimeB = data.jogadoresTimeB || []; 
 
@@ -164,11 +165,11 @@
                   jogadoresTravadosLocal = data.jogadoresTravados || {}; // Atualiza a variável local
                   estrelasRegistradasLocal = data.estrelasRegistradas || []; // Atualiza a variável local
 
-                  // NOVO: Filtrar jogadores travados e aplicar classes de destaque
+                  // Filtrar jogadores travados e aplicar classes de destaque
                   const filaGeralFiltrada = filaGeral.filter(j => !jogadoresTravadosLocal[j]);
                   const filaEstrelaFiltrada = filaEstrela.filter(j => !jogadoresTravadosLocal[j]);
 
-                  filaGeralEl.innerHTML = filaGeralFiltrada.map((j, i) => { // Usa filaGeralFiltrada
+                  filaGeralEl.innerHTML = filaGeralFiltrada.map((j, i) => {
                       let destaqueClass = '';
                       if (i === 0) destaqueClass = 'proximo-jogador-geral-1';
                       else if (i === 1) destaqueClass = 'proximo-jogador-geral-2';
@@ -182,9 +183,9 @@
                   }).join('');
                   if (filaGeralFiltrada.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia ou todos travados.</li>';
 
-                  filaEstrelaEl.innerHTML = filaEstrelaFiltrada.map((j, i) => { // Usa filaEstrelaFiltrada
+                  filaEstrelaEl.innerHTML = filaEstrelaFiltrada.map((j, i) => {
                       let destaqueClass = '';
-                      if (i === 0) destaqueClass = 'proximo-jogador-estrela'; // Apenas o primeiro da estrela
+                      if (i === 0) destaqueClass = 'proximo-jogador-estrela';
                       
                       return `
                         <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
@@ -225,7 +226,7 @@
 
 
           // Escutar Histórico de Partidas (AGORA SEM LIMITE)
-          const q = query(historicoCollectionRef, orderBy("data", "desc")); // Removido limit(5)
+          const q = query(historicoCollectionRef, orderBy("data", "desc"));
           onSnapshot(q, (querySnapshot) => {
               const listaHistoricoEl = document.getElementById('visualizarHistorico');
               listaHistoricoEl.innerHTML = '';
