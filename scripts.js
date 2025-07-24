@@ -1035,7 +1035,8 @@ function atualizarRanking() {
             if (!jogadoresStats[nome]) {
                 jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
             }
-            const score = (jogadoresStats[nome].vitorias * 3) + jogadoresStats[nome].pontos;
+            const stats = jogadoresStats[nome]; // CORRIGIDO: Define stats aqui
+            const score = (stats.vitorias * 3) + stats.pontos;
             return { nome: nome, stats: stats, score: score }; 
         })
         .filter(entry => entry.stats.pontos > 0 || entry.stats.vitorias > 0 || entry.stats.derrotas > 0)
@@ -1606,7 +1607,7 @@ window.marcarPonto = marcarPonto;
 window.adicionarPontoAvulso = adicionarPontoAvulso; 
 window.removerPontoAvulso = removerPontoAvulso; 
 window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore;
-window.trocarJogador = trocarJogador; // Adicionada esta linha de exposição
+window.trocarJogador = trocarJogador; 
 
 window.onclick = function(event) {
     if (event.target === document.getElementById('modalConfig')) {
