@@ -1183,7 +1183,7 @@ function atualizarStatusPartida() {
 function toggleLock(nomeJogador) {
     salvarEstadoAtual();
     jogadoresTravados[nomeJogador] = !jogadoresTravados[nomeJogador];
-    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); 
     atualizarTela();
 }
 
@@ -1516,9 +1516,9 @@ function fecharHistorico() {
     document.getElementById('modalHistorico').classList.add('hidden');
 }
 
-async function redefinirTudo() { // Torna a função assíncrona
+async function redefinirTudo() { 
     if (confirm("ATENÇÃO: Tem certeza que deseja redefinir TUDO? Isso apagará todas as estatísticas, histórico de partidas e configurações salvas.")) {
-        localStorage.clear(); // Limpa todo o localStorage do seu domínio
+        localStorage.clear(); 
         primeiraInicializacaoConcluida = false;
         localStorage.setItem('primeiraInicializacaoConcluida', 'false');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); 
