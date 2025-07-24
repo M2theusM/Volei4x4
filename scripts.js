@@ -104,7 +104,7 @@ function carregarDadosIniciais() {
     } else {
         jogadoresTravados = {}; // Garante que seja um objeto vazio se não houver dados salvos
     }
-
+    
     // Carregar estrelasRegistradas
     const savedEstrelasRegistradas = localStorage.getItem('estrelasRegistradas');
     if (savedEstrelasRegistradas) {
@@ -208,8 +208,8 @@ function recomporTimesAposConfiguracao() {
                 // Se não há estrelas disponíveis na fila, tenta da fila geral se permitido pelas regras
                 const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
                 if (geralDisponivel) {
-                    timeA.push(geralDisponivel);
-                    filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+                     timeA.push(geralDisponivel);
+                     filaGeral = filaGeral.filter(j => j !== geralDisponivel);
                 } else {
                     break; // Não há jogadores disponíveis
                 }
@@ -221,7 +221,7 @@ function recomporTimesAposConfiguracao() {
                 timeA.push(geralDisponivel);
                 filaGeral = filaGeral.filter(j => j !== geralDisponivel);
             } else {
-                // Tenta pegar estrela da fila estrela, se for para preencher vaga geral
+                 // Tenta pegar estrela da fila estrela, se for para preencher vaga geral
                 const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
                 if (estrelaDisponivel) {
                     timeA.push(estrelaDisponivel);
@@ -241,7 +241,7 @@ function recomporTimesAposConfiguracao() {
 
     let geraisParaTimeB = geraisEmCampo.splice(0, jogadoresNecessariosPorTime - timeB.length); // Gerais que sobraram de geraisEmCampo
     timeB.push(...geraisParaTimeB);
-
+    
     while (timeB.length < jogadoresNecessariosPorTime) {
         if (timeB.filter(j => estrelasRegistradas.includes(j)).length < estrelasNecessariasPorTime) {
             const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
@@ -251,8 +251,8 @@ function recomporTimesAposConfiguracao() {
             } else {
                 const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
                 if (geralDisponivel) {
-                    timeB.push(geralDisponivel);
-                    filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+                     timeB.push(geralDisponivel);
+                     filaGeral = filaGeral.filter(j => j !== geralDisponivel);
                 } else {
                     break;
                 }
@@ -263,7 +263,7 @@ function recomporTimesAposConfiguracao() {
                 timeB.push(geralDisponivel);
                 filaGeral = filaGeral.filter(j => j !== geralDisponivel);
             } else {
-                const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+                 const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
                 if (estrelaDisponivel) {
                     timeB.push(estrelaDisponivel);
                     filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
@@ -299,8 +299,8 @@ function recomporTimesAposConfiguracao() {
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
-
-    // NOVO: Salvar o estado do jogo no Firestore após recomposição de times
+    
+    // Salvar o estado do jogo no Firestore após recomposição de times
     salvarEstadoDoJogoNoFirestore();
 
     atualizarTela();
@@ -343,19 +343,18 @@ function iniciarNovoJogo() {
     if (!primeiraInicializacaoConcluida) {
         // Primeira inicialização: Filas e times começam vazios
         // Popula as filas padrão SOMENTE SE elas estiverem realmente vazias
-        // Isso evita adicionar nomes duplicados se o usuário já adicionou manualmente
         if (filaGeral.length === 0 && filaEstrela.length === 0) {
             filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela","Rafael", "Wendel"];
             filaEstrela = ["Daniele", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
             estrelasRegistradas = [...filaEstrela];
         }
-
+        
         // Exibe o alerta APENAS uma vez na primeira carga
         if (localStorage.getItem('primeiraInicializacaoAlertExibido') !== 'true') {
             alert("Bem-vindo! Para começar, adicione os jogadores manualmente nas 'Fila Geral' e/ou 'Fila com Estrela' e, em seguida, preencha os times A e B em quadra para iniciar a primeira partida.");
             localStorage.setItem('primeiraInicializacaoAlertExibido', 'true');
         }
-
+        
         // Inicializa todos os jogadores conhecidos com o estado de travado como FALSE (destravado) por padrão
         // para permitir seleção manual.
         const allKnownPlayers = new Set([...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
@@ -380,7 +379,7 @@ function iniciarNovoJogo() {
 
     // Garante que estrelasRegistradas reflita as estrelas que já estão em jogadoresStats
     estrelasRegistradas = Object.keys(jogadoresStats).filter(nome => estrelasRegistradas.includes(nome) || filaEstrela.includes(nome));
-
+    
     // As filas devem ser carregadas do localStorage ou conter jogadores já adicionados.
     // Nao repopular com jogadores padrão aqui se já houver jogadores.
 
@@ -391,7 +390,7 @@ function iniciarNovoJogo() {
         }
         // Se o jogador não está em jogadoresTravados, assume destravado por padrão
         if (jogadoresTravados[nome] === undefined) {
-            jogadoresTravados[nome] = false; // Assume destravado por padrão
+             jogadoresTravados[nome] = false; // Assume destravado por padrão
         }
     });
 
@@ -426,12 +425,12 @@ function iniciarNovoJogo() {
     // Atualiza as filas filtrando os jogadores que foram para os times
     filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
     filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
-
+    
     // Garante que jogadores em campo estão destravados
     timeA.forEach(j => jogadoresTravados[j] = false);
     timeB.forEach(j => jogadoresTravados[j] = false);
-
-    // NOVO: Salva jogadoresTravados após formação automática dos times.
+    
+    // Salva jogadoresTravados após formação automática dos times.
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
@@ -440,7 +439,7 @@ function iniciarNovoJogo() {
     atualizarTela();
 }
 
-// NOVO: Função para preencher os times manualmente na primeira inicialização
+// Função para preencher os times manualmente na primeira inicialização
 function preencherTimesManualmente() {
     salvarEstadoAtual(); // Salva o estado antes de preencher
     timeA = [];
@@ -514,7 +513,7 @@ function preencherTimesManualmente() {
     const allKnownPlayers = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
     allKnownPlayers.forEach(nome => {
         if (!jogadoresStats[nome]) {
-            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
         }
         if (timeA.includes(nome) || timeB.includes(nome)) {
             jogadoresTravados[nome] = false; // Destrava quem está em campo
@@ -535,7 +534,7 @@ function preencherTimesManualmente() {
     alert("Times preenchidos com sucesso! A partida pode começar.");
     atualizarTela();
 
-    // NOVO: Salvar o estado do jogo no Firestore após preenchimento manual
+    // Salvar o estado do jogo no Firestore após preenchimento manual
     salvarEstadoDoJogoNoFirestore();
 }
 
@@ -588,7 +587,7 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
             return;
         }
     }
-
+    
     if (time === 'A') {
         timeA[indexQuadra] = jogadorParaEntrar;
     } else {
@@ -603,10 +602,10 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
     } else {
         filaGeral.push(jogadorParaSair);
     }
-
+    
     // Garante que o jogador que entra na quadra está destravado.
     jogadoresTravados[jogadorParaEntrar] = false; 
-
+    
     // O jogador que sai deve manter seu estado de travamento que tinha antes.
     if (jogadoresTravados[jogadorParaSair] === undefined) {
         jogadoresTravados[jogadorParaSair] = false; // Default: destravado
@@ -616,7 +615,7 @@ function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
 
     atualizarTela();
 
-    // NOVO: Salvar o estado do jogo no Firestore após a troca de jogador
+    // Salvar o estado do jogo no Firestore após a troca de jogador
     salvarEstadoDoJogoNoFirestore();
 }
 
@@ -663,7 +662,7 @@ function verificarVitoriaPartida() {
     return null;
 }
 
-function marcarPonto(time, jogador, tipoPonto = 'ponto_normal') { // NOVO: tipoPonto para identificar erro
+function marcarPonto(time, jogador, tipoPonto = 'ponto_normal') {
     salvarEstadoAtual();
     if (!jogadoresStats[jogador]) {
         jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
@@ -673,17 +672,15 @@ function marcarPonto(time, jogador, tipoPonto = 'ponto_normal') { // NOVO: tipoP
     if (time === 'A') placarA++;
     else placarB++;
 
-    // NOVO: Adiciona o ponto ao log de pontos da partida atual
     logPontosPartidaAtual.push({
         placarA: placarA,
         placarB: placarB,
         time: time,
-        jogador: jogador, // NOVO: jogador é o nome do jogador que marcou
+        jogador: jogador,
         tipo: tipoPonto,
-        timestampLocal: new Date().toISOString() // Para ordenação e depuração
+        timestampLocal: new Date().toISOString()
     });
 
-    // Marcar primeiraInicializacaoConcluida se for a primeira vez que um ponto é marcado
     if (!primeiraInicializacaoConcluida && (placarA > 0 || placarB > 0)) {
         primeiraInicializacaoConcluida = true;
         localStorage.setItem('primeiraInicializacaoConcluida', 'true');
@@ -694,11 +691,9 @@ function marcarPonto(time, jogador, tipoPonto = 'ponto_normal') { // NOVO: tipoP
     if (vencedor) {
         registrarVitoria(vencedor);
     }
-    // Salva jogadoresStats após cada ponto para persistência imediata
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
 
-    // NOVO: Salvar o estado do jogo no Firestore após cada ponto
     salvarEstadoDoJogoNoFirestore(jogador, time, tipoPonto); 
 }
 
@@ -733,38 +728,32 @@ function registrarVitoria(vencedor) {
         });
     }
 
-    // NOVO: Adiciona o registro no histórico de partidas ANTES de redefinir timeA/timeB
     const partidaAtualParaHistorico = {
-        timeA: [...timeA], // Clona arrays para o histórico
-        timeB: [...timeB], // Clona arrays para o histórico
+        timeA: [...timeA],
+        timeB: [...timeB],
         placarFinalA: placarA,
         placarFinalB: placarB,
         vencedor: vencedor === 'ambosSaem' ? 'Empate/Ambos Saíram' : `Time ${vencedor}`,
         data: new Date().toLocaleString('pt-BR'),
-        detalhesPontos: [...logPontosPartidaAtual], // Adiciona o log de pontos da partida
-        // NOVO: Adiciona timestamp do início e fim da partida a partir do logPontosPartidaAtual
+        detalhesPontos: [...logPontosPartidaAtual],
         tempoInicioPartida: logPontosPartidaAtual.length > 0 ? logPontosPartidaAtual[0].timestampLocal : null,
         tempoFimPartida: logPontosPartidaAtual.length > 0 ? logPontosPartidaAtual[logPontosPartidaAtual.length - 1].timestampLocal : null
     };
     historicoPartidas.unshift(partidaAtualParaHistorico);
-    // localStorage.setItem('historicoPartidas', JSON.stringify(historicoPartidas)); // Se quiser persistir o histórico localmente
 
-    // NOVO: Salva a partida no Firestore
     const partidasCollectionRef = window.collection(window.db, 'historicoPartidas');
     window.addDoc(partidasCollectionRef, {
-        ...partidaAtualParaHistorico, // Inclui todos os dados da partida
-        data: window.serverTimestamp() // Usa timestamp do servidor para a data
+        ...partidaAtualParaHistorico,
+        data: window.serverTimestamp()
     })
     .then(() => { console.log("Partida finalizada salva no Firestore!"); })
     .catch(error => { console.error("Erro ao salvar partida no Firestore: ", error); });
 
-    // Marcar primeiraInicializacaoConcluida como true após a primeira vitória
     if (!primeiraInicializacaoConcluida) {
         primeiraInicializacaoConcluida = true;
         localStorage.setItem('primeiraInicializacaoConcluida', 'true');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); 
     }
-
 
     let jogadoresParaFila = [];
     if (vencedor === 'ambosSaem' || vitoriasA >= maxVitoriasConsecutivas || vitoriasB >= maxVitoriasConsecutivas) {
@@ -782,11 +771,9 @@ function registrarVitoria(vencedor) {
     }
 
     shuffleArray(jogadoresParaFila);
-    // Ao adicionar jogadores de volta às filas, garanta que seu estado existente seja mantido.
-    // Se o jogador não tem um estado definido ainda, ele será destravado por padrão (false).
     jogadoresParaFila.forEach(j => {
         if (jogadoresTravados[j] === undefined) {
-            jogadoresTravados[j] = false; // Se nunca foi definido, assume destravado ao ir para a fila
+             jogadoresTravados[j] = false; 
         }
         if (estrelasRegistradas.includes(j)) {
             filaEstrela.push(j);
@@ -797,7 +784,7 @@ function registrarVitoria(vencedor) {
 
     const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
     const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
-
+    
     const estrelasParaAlocar = Math.max(0, estrelasPorTime);
     const jogadoresGeraisPorTimeCalc = jogadoresPorTime - estrelasParaAlocar;
 
@@ -808,7 +795,7 @@ function registrarVitoria(vencedor) {
         atualizarTela();
         return;
     }
-
+    
     if (timeA.length === 0 && timeB.length === 0) {
         if (filaEstrelaDisponivel.length >= (estrelasParaAlocar * 2) && filaGeralDisponivel.length >= (jogadoresGeraisPorTimeCalc * 2)) {
             for (let i = 0; i < estrelasParaAlocar; i++) {
@@ -816,14 +803,13 @@ function registrarVitoria(vencedor) {
                 timeB.push(filaEstrelaDisponivel.shift());
             }
             for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
-                timeA.push(jogadoresGeraisDisponivel.shift());
-                timeB.push(jogadoresGeraisDisponivel.shift());
+                timeA.push(filaGeralDisponivel.shift());
+                timeB.push(filaGeralDisponivel.shift());
             }
             // Destravar os jogadores que entraram em campo
             timeA.forEach(j => jogadoresTravados[j] = false);
             timeB.forEach(j => jogadoresTravados[j] = false);
         } else {
-            // Se for primeiraInicializacaoConcluida, avisa que não pode formar
             if (primeiraInicializacaoConcluida) {
                 alert("Não há jogadores suficientes disponíveis nas filas para formar novos times com o mínimo de estrelas configurado. Adicione mais jogadores ou destrave-os.");
             }
@@ -865,7 +851,7 @@ function registrarVitoria(vencedor) {
     const allKnownPlayersAfterVictory = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
     allKnownPlayersAfterVictory.forEach(nome => {
         if (!jogadoresStats[nome]) {
-            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
         }
         if (timeA.includes(nome) || timeB.includes(nome)) {
             jogadoresTravados[nome] = false;
@@ -947,7 +933,7 @@ function adicionarParticipante(tipoFila) {
 
         nomeInput.value = "";
         atualizarTela();
-        // NOVO: Salvar o estado do jogo no Firestore após adicionar participante
+        // Salvar o estado do jogo no Firestore após adicionar participante
         salvarEstadoDoJogoNoFirestore();
     }
 }
@@ -966,7 +952,7 @@ function removerParticipante(tipoFila, index) {
     const nomeRemovido = filaAlvo.splice(index, 1)[0];
     delete jogadoresTravados[nomeRemovido]; // Remove do controle de travados
     delete jogadoresStats[nomeRemovido]; // Opcional: remover stats ao remover da fila
-
+    
     // Remover também de estrelasRegistradas se for o caso
     const estrelaIndex = estrelasRegistradas.indexOf(nomeRemovido);
     if (estrelaIndex > -1) {
@@ -979,7 +965,7 @@ function removerParticipante(tipoFila, index) {
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     atualizarTela();
-    // NOVO: Salvar o estado do jogo no Firestore após remover participante
+    // Salvar o estado do jogo no Firestore após remover participante
     salvarEstadoDoJogoNoFirestore();
 }
 
@@ -1058,7 +1044,7 @@ function editarParticipante(tipoFila, index, novoNome) {
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     atualizarTela();
-    // NOVO: Salvar o estado do jogo no Firestore após editar participante
+    // Salvar o estado do jogo no Firestore após editar participante
     salvarEstadoDoJogoNoFirestore();
 }
 
@@ -1072,7 +1058,7 @@ function embaralharFila(tipoFila) {
         localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     }
     atualizarTela();
-    // NOVO: Salvar o estado do jogo no Firestore após embaralhar fila
+    // Salvar o estado do jogo no Firestore após embaralhar fila
     salvarEstadoDoJogoNoFirestore();
 }
 
@@ -1265,7 +1251,7 @@ function atualizarTela() {
         // Preencher os selects para seleção manual
         const selectsTimeA = document.getElementById('selectsTimeA');
         const selectsTimeB = document.getElementById('selectsTimeB');
-
+        
         // Função auxiliar para criar as opções do select
         const createPlayerOptions = (excludePlayers = []) => {
             let optionsHTML = '<option value="-1">Selecione um jogador</option>';
@@ -1311,7 +1297,7 @@ function atualizarTela() {
             `;
             selectsTimeB.appendChild(selectDiv);
         }
-
+        
         // Adiciona um listener para atualizar as opções dos outros selects ao selecionar um jogador
         const updateSelectOptions = () => {
             const currentSelections = [];
@@ -1332,7 +1318,7 @@ function atualizarTela() {
             s.addEventListener('change', updateSelectOptions);
         });
         updateSelectOptions(); // Chama uma vez para configurar o estado inicial
-
+        
     } else {
         // Se já está no modo automático ou times não estão vazios
         selecaoInicialTimesEl.classList.add('hidden');
@@ -1391,10 +1377,10 @@ function atualizarTela() {
             <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
                 ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
             </span>
-
+            
         </li>
     `).join("");
-    //<button onclick="removerParticipante('geral', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
+	//<button onclick="removerParticipante('geral', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
 
     document.getElementById("filaEstrela").innerHTML = filaEstrela.map((j, i) => `
         <li class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-200 ${jogadoresTravados[j] ? 'locked bg-gray-50' : ''}">
@@ -1404,11 +1390,11 @@ function atualizarTela() {
             <span class="lock-icon text-lg ${jogadoresTravados[j] ? 'text-red-500' : 'text-green-500'}" onclick="toggleLock('${j.replace(/'/g, "\\'")}')">
                 ${jogadoresTravados[j] ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>'}
             </span>
-
+            
         </li>
     `).join("");
-    //<button onclick="removerParticipante('estrela', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
-
+	//<button onclick="removerParticipante('estrela', ${i})" class="ml-2 px-3 py-1 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors">X</button>
+	
     document.getElementById("vitoriasA").innerText = vitoriasA;
     document.getElementById("vitoriasB").innerText = vitoriasB;
     document.getElementById("placarA").innerText = placarA;
@@ -1542,7 +1528,7 @@ function mostrarHistorico() {
                     <ul class="list-disc list-inside text-sm space-y-1"></ul>
                 </div>
             `;
-
+            
             const toggleButton = li.querySelector('.toggle-detalhes');
             const detalhesDiv = li.querySelector('.detalhes-pontos-partida');
             const ulDetalhes = detalhesDiv.querySelector('ul');
@@ -1556,7 +1542,7 @@ function mostrarHistorico() {
                         const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
                         const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
                         const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
-
+                        
                         let descricaoPonto;
                         if (ponto.tipo === 'ponto_avulso') {
                             descricaoPonto = `Ponto Time ${ponto.time}`;
@@ -1588,7 +1574,7 @@ function fecharHistorico() {
     document.getElementById('modalHistorico').classList.add('hidden');
 }
 
-// NOVO: Função para redefinir todos os dados
+// Função para redefinir todos os dados
 async function redefinirTudo() { // Torna a função assíncrona
     if (confirm("ATENÇÃO: Tem certeza que deseja redefinir TUDO? Isso apagará todas as estatísticas, histórico de partidas e configurações salvas.")) {
         localStorage.clear(); // Limpa todo o localStorage do seu domínio
@@ -1597,7 +1583,7 @@ async function redefinirTudo() { // Torna a função assíncrona
         localStorage.setItem('primeiraInicializacaoConcluida', 'false');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); // Para reexibir o alerta de primeira vez
 
-        // NOVO: Tenta deletar documentos no Firestore para resetar o visualizador
+        // Tenta deletar documentos no Firestore para resetar o visualizador
         if (window.db) {
             const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual');
             const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais');
@@ -1606,10 +1592,9 @@ async function redefinirTudo() { // Torna a função assíncrona
 
             try {
                 // Resetar documentos de status (placar, filas, stats)
-                // Usamos 'await' para esperar a conclusão de cada operação
                 await window.setDoc(placarDocRef, { timeA: 0, timeB: 0, vitoriasA: 0, vitoriasB: 0, ultimoJogadorMarcou: null, timeUltimoMarcador: null, historicoPontosDetalhado: [], tipoPonto: 'reset', timestamp: window.serverTimestamp() });
                 console.log("Placar Firestore resetado.");
-
+                
                 await window.setDoc(filasDocRef, { filaGeral: [], filaEstrela: [], jogadoresTravados: {}, estrelasRegistradas: [], timestamp: window.serverTimestamp() });
                 console.log("Filas Firestore resetadas.");
 
@@ -1617,13 +1602,12 @@ async function redefinirTudo() { // Torna a função assíncrona
                 console.log("Stats Firestore resetados.");
 
                 // Limpar a coleção historicoPartidas
-                // Obtém todos os documentos da coleção e os deleta um por um.
-                const querySnapshot = await window.getDocs(historicoCollectionRef); // 'await' aqui
+                const querySnapshot = await window.getDocs(historicoCollectionRef);
                 const deletePromises = [];
                 querySnapshot.forEach((doc) => {
                     deletePromises.push(window.deleteDoc(window.doc(window.db, 'historicoPartidas', doc.id)));
                 });
-                await Promise.all(deletePromises); // 'await' aqui para esperar todas as deleções serem concluídas
+                await Promise.all(deletePromises);
                 console.log("Coleção historicoPartidas limpa no Firestore.");
             } catch (e) {
                 console.error("Erro ao resetar dados no Firestore:", e);
@@ -1636,50 +1620,53 @@ async function redefinirTudo() { // Torna a função assíncrona
     }
 }
 
-// NOVO: Função auxiliar para salvar o placar atual e o estado das filas no Firestore
-function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal') { // Adiciona tipoPonto aqui
-    // Acessa as variáveis globais do Firebase inicializadas no index.html
+// Função auxiliar para salvar o placar atual e o estado das filas no Firestore
+function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal') {
     if (!window.db) { 
         console.warn("Firestore não inicializado. Não foi possível salvar o estado do jogo.");
         return;
     }
 
-    const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual'); // Documento único para placar atual
-    const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais'); // Documento único para filas
-    const statsDocRef = window.doc(window.db, 'statusJogo', 'statsJogadores'); // Documento único para stats globais
+    const placarDocRef = window.doc(window.db, 'statusJogo', 'placarAtual');
+    const filasDocRef = window.doc(window.db, 'statusJogo', 'filasAtuais');
+    const statsDocRef = window.doc(window.db, 'statusJogo', 'statsJogadores'); 
 
-    // Salvar Placar Atual
+    // Filtrar jogadoresStats para remover chaves vazias antes de enviar
+    const jogadoresStatsLimpo = {};
+    for (const key in jogadoresStats) {
+        if (key !== '') {
+            jogadoresStatsLimpo[key] = jogadoresStats[key];
+        }
+    }
+
     window.setDoc(placarDocRef, {
         timeA: placarA,
         timeB: placarB,
-        vitoriasA: vitoriasA, // Inclua as vitórias consecutivas também
+        vitoriasA: vitoriasA,
         vitoriasB: vitoriasB,
-        // NOVO: Adiciona jogadoresTimeA e jogadoresTimeB
-        jogadoresTimeA: timeA, 
-        jogadoresTimeB: timeB,
-        ultimoJogadorMarcou: ultimoMarcador, // Campo para o último marcador
-        timeUltimoMarcador: timeUltimoMarcador, // Campo para o time do último marcador
-        tipoPonto: tipoPonto, // Tipo de ponto
-        historicoPontosDetalhado: logPontosPartidaAtual, // Salva o log de pontos da partida atual
-        timestamp: window.serverTimestamp() // Firestore cria um timestamp no servidor
+        jogadoresTimeA: timeA, // Inclui jogadores em quadra
+        jogadoresTimeB: timeB, // Inclui jogadores em quadra
+        ultimoJogadorMarcou: ultimoMarcador,
+        timeUltimoMarcador: timeUltimoMarcador,
+        tipoPonto: tipoPonto,
+        historicoPontosDetalhado: logPontosPartidaAtual,
+        timestamp: window.serverTimestamp()
     })
     .then(() => { console.log("Placar atualizado no Firestore!"); })
     .catch(error => { console.error("Erro ao atualizar placar no Firestore:", error); });
 
-    // Salvar Filas Atuais
     window.setDoc(filasDocRef, {
         filaGeral: filaGeral,
         filaEstrela: filaEstrela,
-        jogadoresTravados: jogadoresTravados, // Também é importante para a visualização
-        estrelasRegistradas: estrelasRegistradas, // Para saber quem é estrela
+        jogadoresTravados: jogadoresTravados,
+        estrelasRegistradas: estrelasRegistradas,
         timestamp: window.serverTimestamp()
     })
     .then(() => { console.log("Filas atualizadas no Firestore!"); })
     .catch(error => { console.error("Erro ao atualizar filas no Firestore:", error); });
 
-    // Salvar Jogadores Stats Globais (para o ranking e destaques no visualizador)
     window.setDoc(statsDocRef, {
-        jogadoresStats: jogadoresStats,
+        jogadoresStats: jogadoresStatsLimpo, // Usa o objeto filtrado
         timestamp: window.serverTimestamp()
     })
     .then(() => { console.log("Estatísticas de jogadores atualizadas no Firestore!"); })
@@ -1691,54 +1678,45 @@ function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador
 carregarDadosIniciais(); // Carrega dados persistidos (stats, travados, filas)
 
 // Popula as filas padrão APENAS SE FOR O PRIMEIRO ACESSO E AS FILAS ESTIVEREM VAZIAS
-// E inicializa os jogadores como destravados para a seleção manual
 if (!primeiraInicializacaoConcluida && filaGeral.length === 0 && filaEstrela.length === 0) {
     filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela","Rafael", "Wendel"];
     filaEstrela = ["Daniele", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
     estrelasRegistradas = [...filaEstrela];
 
-    // Salva as filas e estrelas iniciais
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
     localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
 
-    // Inicializa todos os jogadores como destravados na primeira carga, para que possam ser selecionados
     [...filaGeral, ...filaEstrela].forEach(nome => {
         if (!jogadoresStats[nome]) {
             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
         }
-        jogadoresTravados[nome] = false; // Define explicitamente como destravado
+        jogadoresTravados[nome] = false; 
     });
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
 } else {
-    // Se não é a primeira inicialização OU as filas não estavam vazias (já foram preenchidas/carregadas)
-    // Garante que o estado de travado de jogadores em campo seja false
-    // E de jogadores nas filas que não foram para campo seja o estado salvo ou false por padrão.
     const allKnownPlayers = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
     allKnownPlayers.forEach(nome => {
         if (!jogadoresStats[nome]) {
             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
         }
         if (timeA.includes(nome) || timeB.includes(nome)) {
-            jogadoresTravados[nome] = false; // Destravado se estiver em campo
+            jogadoresTravados[nome] = false; 
         } else if (jogadoresTravados[nome] === undefined) {
-            // Se o jogador não está em campo e seu estado não foi definido (jogadores novos ou dados corrompidos),
-            // ele é definido como destravado por padrão.
             jogadoresTravados[nome] = false; 
         }
-        // Se já tinha um estado (true/false) e não está em campo, mantém esse estado.
     });
     localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
     localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
     localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
-    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas)); // Garante que estrelas tb sejam salvas
+    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
 }
 
 
-iniciarNovoJogo(); // Esta chamada agora gerencia o comportamento de "primeira vez"
-historicoEstados = []; // Limpa o histórico ao carregar a página pela primeira vez
+iniciarNovoJogo(); 
+historicoEstados = []; 
 atualizarTela();    
 
 // Expor funções globais para o HTML (onclick, etc.)
@@ -1762,7 +1740,6 @@ window.adicionarPontoAvulso = adicionarPontoAvulso;
 window.removerPontoAvulso = removerPontoAvulso; 
 window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore;
 
-// Listener global para fechar modais (movido para fora de DOMContentLoaded para evitar duplicação)
 window.onclick = function(event) {
     if (event.target === document.getElementById('modalConfig')) {
         fecharConfiguracoes();
@@ -1772,37 +1749,30 @@ window.onclick = function(event) {
     }
 }
 
-// NOVO: Desativar "pull-to-refresh"
 document.addEventListener('DOMContentLoaded', () => {
-    let lastTouchY = 0; // Para registrar a posição Y do último toque
-    let isPulling = false; // Sinaliza se o usuário está puxando para baixo
+    let lastTouchY = 0; 
+    let isPulling = false; 
 
     document.body.addEventListener('touchstart', (e) => {
-        // Registra a posição Y do toque inicial
         lastTouchY = e.touches[0].clientY;
-        // Assume que não está puxando inicialmente
         isPulling = false;
-    }, { passive: false }); // Use passive: false para poder chamar preventDefault
+    }, { passive: false }); 
 
     document.body.addEventListener('touchmove', (e) => {
         const currentTouchY = e.touches[0].clientY;
         const deltaY = currentTouchY - lastTouchY;
 
-        // Se o scroll está no topo da página (scrollTop é 0)
-        // E o usuário está puxando para baixo (deltaY > 0)
-        // E ainda não foi identificado como um "pull-to-refresh"
         if (document.documentElement.scrollTop === 0 && deltaY > 0 && !isPulling) {
-            isPulling = true; // Marca que está tentando puxar
-            e.preventDefault(); // Impede o comportamento padrão (pull-to-refresh)
+            isPulling = true;
+            e.preventDefault(); 
         } else if (isPulling) {
-            // Se já estamos no modo de puxar, continue impedindo o default
             e.preventDefault();
         }
-
-        lastTouchY = currentTouchY; // Atualiza a última posição do toque
-    }, { passive: false }); // Use passive: false para poder chamar preventDefault
+        
+        lastTouchY = currentTouchY; 
+    }, { passive: false }); 
 
     document.body.addEventListener('touchend', () => {
-        isPulling = false; // Reseta o estado quando o toque termina
+        isPulling = false;
     });
 });
