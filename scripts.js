@@ -336,8 +336,8 @@ function iniciarNovoJogo() {
 
     if (!primeiraInicializacaoConcluida) {
         if (filaGeral.length === 0 && filaEstrela.length === 0) {
-            filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela", "Rafael", "Wendel"];
-            filaEstrela = ["Daniele", "Gabi", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Sara", "Taynara"];
+            filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela","Rafael", "Wendel"];
+            filaEstrela = ["Daniele", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
             estrelasRegistradas = [...filaEstrela];
         }
         
@@ -420,7 +420,6 @@ function iniciarNovoJogo() {
     atualizarTela();
 }
 
-// Função para preencher os times manualmente na primeira inicialização
 function preencherTimesManualmente() {
     salvarEstadoAtual();
     timeA = [];
@@ -729,6 +728,7 @@ function registrarVitoria(vencedor) {
         localStorage.setItem('primeiraInicializacaoConcluida', 'true');
         localStorage.removeItem('primeiraInicializacaoAlertExibido'); 
     }
+
 
     let jogadoresParaFila = [];
     if (vencedor === 'ambosSaem' || vitoriasA >= maxVitoriasConsecutivas || vitoriasB >= maxVitoriasConsecutivas) {
@@ -1084,7 +1084,7 @@ function atualizarDestaques() {
     }).filter(player => player.stats.pontos > 0 || player.stats.vitorias > 0 || player.stats.derrotas > 0); 
 
     const jogadoresGerais = todosJogadoresArray.filter(player => !player.isEstrela);
-    const jogadoresEstrela = todosJogadoresArray.filter(player => player.isEstrela);
+    const jogadoresEstrela = todosJogadoresArray.filter(player => !player.isEstrela);
 
     const getDestaque = (arr, type) => {
         if (arr.length === 0) return { nomes: ['N/A'], valor: 'N/A' }; 
@@ -1183,7 +1183,7 @@ function atualizarStatusPartida() {
 function toggleLock(nomeJogador) {
     salvarEstadoAtual();
     jogadoresTravados[nomeJogador] = !jogadoresTravados[nomeJogador];
-    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); 
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
     atualizarTela();
 }
 
@@ -1354,40 +1354,6 @@ function atualizarTela() {
     setupSortableLists();
 }
 
-function setupSortableLists() {
-    const setupSortable = (ulElement, filaArray) => {
-        if (ulElement.sortableInstance) {
-            ulElement.sortableInstance.destroy();
-        }
-        ulElement.sortableInstance = new Sortable(ulElement, {
-            animation: 150,
-            handle: '.drag-handle',
-            // Removendo o filtro de classe 'locked' para permitir arrastar o item
-            // independentemente do estado do cadeado. A lógica de "não pode entrar em campo"
-            // continua nos dropdowns e na função trocarJogador.
-            // filter: '.locked', // <--- Removido / Comentado
-            onMove: function (evt) {
-                // Se a intenção é APENAS impedir arrastar para fora da fila,
-                // mas permitir reordenar dentro da fila:
-                // `evt.related` é o elemento para o qual `evt.dragged` está sendo movido.
-                // Se `evt.to` (lista destino) não é o `ulElement` atual, impede.
-                if (evt.to !== ulElement) {
-                    return !evt.dragged.classList.contains('locked'); // Só pode arrastar para fora da fila se NÃO estiver travado
-                }
-                return true; // Sempre permite reordenar dentro da mesma fila
-            },
-            onEnd: function (evt) {
-                salvarEstadoAtual();
-                const [movedItem] = filaArray.splice(evt.oldIndex, 1);
-                filaArray.splice(evt.newIndex, 0, movedItem);
-                atualizarTela();
-            }
-        });
-    };
-    setupSortable(document.getElementById('filaGeral'), filaGeral);
-    setupSortable(document.getElementById('filaEstrela'), filaEstrela);
-}
-
 function adicionarPontoAvulso(time, tipoPonto = 'ponto_avulso') { // NOVO: Adiciona tipoPonto aqui também
     salvarEstadoAtual();
     if (time === 'A') placarA++;
@@ -1411,6 +1377,7 @@ function adicionarPontoAvulso(time, tipoPonto = 'ponto_avulso') { // NOVO: Adici
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
 
+    // Salva o estado do jogo no Firestore após cada ponto
     salvarEstadoDoJogoNoFirestore(null, time, tipoPonto); 
 }
 
@@ -1568,8 +1535,15 @@ function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador
 
     const jogadoresStatsLimpo = {};
     for (const key in jogadoresStats) {
-        if (key !== '') {
+        if (key !== '') { 
             jogadoresStatsLimpo[key] = jogadoresStats[key];
+        }
+    }
+    
+    const jogadoresTravadosLimpo = {};
+    for (const key in jogadoresTravados) {
+        if (key !== '') { 
+            jogadoresTravadosLimpo[key] = jogadoresTravados[key];
         }
     }
 
@@ -1592,7 +1566,7 @@ function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador
     window.setDoc(filasDocRef, {
         filaGeral: filaGeral,
         filaEstrela: filaEstrela,
-        jogadoresTravados: jogadoresTravados,
+        jogadoresTravados: jogadoresTravadosLimpo, // Usa o objeto filtrado
         estrelasRegistradas: estrelasRegistradas,
         timestamp: window.serverTimestamp()
     })
@@ -1634,7 +1608,7 @@ window.marcarPonto = marcarPonto;
 window.adicionarPontoAvulso = adicionarPontoAvulso; 
 window.removerPontoAvulso = removerPontoAvulso; 
 window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore;
-window.trocarJogador = trocarJogador;
+window.trocarJogador = trocarJogador; // Adicionada esta linha de exposição
 
 window.onclick = function(event) {
     if (event.target === document.getElementById('modalConfig')) {
