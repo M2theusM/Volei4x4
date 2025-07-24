@@ -67,6 +67,7 @@ function restaurarEstado(estado) {
     placarB = estado.placarB;
     jogadoresStats = estado.jogadoresStats;
     jogadoresTravados = estado.jogadoresTravados; // Restaura o estado de travados
+    logPontosPartidaAtual = estado.logPontosPartidaAtual; // Restaura o log de pontos
     historicoPartidas = estado.historicoPartidas;
 }
 
@@ -1031,7 +1032,8 @@ function embaralharFila(tipoFila) {
 function atualizarRanking() {
     const todosJogadores = new Set([...Object.keys(jogadoresStats), ...filaGeral, ...filaEstrela, ...timeA, ...timeB]);
     const rankingArray = Array.from(todosJogadores)
-        .map(nome => {
+        .map(entry => { // CORRIGIDO: usa 'entry' diretamente do map
+            const nome = entry; // O item do map agora é o nome diretamente
             if (!jogadoresStats[nome]) {
                 jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
             }
@@ -1054,7 +1056,7 @@ function atualizarRanking() {
         });
 
     const rankingHTML = rankingArray.map((entry, index) => {
-        const nome = entry.nome;
+        const nome = entry.nome; // Usa entry.nome agora
         const stats = entry.stats;
         const score = entry.score; 
 
