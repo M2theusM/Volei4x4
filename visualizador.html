@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='90%' style='font-size:90px;text-anchor:middle;'>🏆</text></svg>" type="image/svg+xml">
     <title>Placar e Filas ao Vivo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -11,7 +10,7 @@
     <style>
         /* Estilos para o balão de último ponto */
         .animate-fade-in-out {
-            animation: fadeOut 10s forwards; /* 10 segundos de duração */
+            animation: fadeOut 10s forwards; /* 3 segundos de duração */
             opacity: 0; /* Começa invisível */
         }
 
@@ -23,17 +22,19 @@
         }
 
         /* Estilo para destacar os próximos jogadores */
-        .proximo-jogador-geral-1 { background-color: #f0f9ff; } /* bg-blue-50 */
-        .proximo-jogador-geral-2 { background-color: #f0f9ff; } /* bg-blue-50 */
-        .proximo-jogador-geral-3 { background-color: #f0f9ff; } /* bg-blue-50 */
-	.proximo-jogador-geral-4 { background-color: #e0f2fe; } /* bg-blue-100 */
-	.proximo-jogador-geral-5 { background-color: #e0f2fe; } /* bg-blue-100 */
-	.proximo-jogador-geral-6 { background-color: #e0f2fe; } /* bg-blue-100 */
-	.proximo-jogador-geral-7 { background-color: #bfdbfe; } /* bg-blue-200 */
-	.proximo-jogador-geral-8 { background-color: #bfdbfe; } /* bg-blue-200 */
-	.proximo-jogador-geral-9 { background-color: #bfdbfe; } /* bg-blue-200 */
+        .proximo-jogador-geral-1 { background-color: #f3f4f6; } /* Tailwind's gray-100 ou um cinza bem claro */
+        .proximo-jogador-geral-2 { background-color: #f3f4f6; } /* Tailwind's gray-100 ou um cinza bem claro */
+        .proximo-jogador-geral-3 { background-color: #f3f4f6; } /* Tailwind's gray-100 ou um cinza bem claro */
+        .proximo-jogador-geral-4 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
+        .proximo-jogador-geral-5 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
+        .proximo-jogador-geral-6 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
+        .proximo-jogador-geral-7 { background-color: #d1d5db; } /* Tailwind's gray-300 */
+        .proximo-jogador-geral-8 { background-color: #d1d5db; } /* Tailwind's gray-300 */
+        .proximo-jogador-geral-9 { background-color: #d1d5db; } /* Tailwind's gray-300 */
 
-        .proximo-jogador-estrela { background-color: #fffbeb; } /* bg-yellow-50 */
+        .proximo-jogador-estrela-1 { background-color: #f9fafb; } /* Tailwind's gray-50 */
+        .proximo-jogador-estrela-2 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
+        .proximo-jogador-estrela-3 { background-color: #d1d5db; } /* Tailwind's gray-300 */
     </style>
 
     <script type="module">
@@ -43,12 +44,12 @@
       // SUAS CREDENCIAIS DO FIREBASE AQUI (COPIADAS DO SEU CONSOLE FIREBASE)
       const firebaseConfig = {
         apiKey: "AIzaSyDeHSudZm5RoiarztXBLHUpQoJ_o-ytHSo",
-		authDomain: "controle-de-partidas.firebaseapp.com",
-		projectId: "controle-de-partidas",
-		storageBucket: "controle-de-partidas.firebasestorage.app",
-		messagingSenderId: "492501310950",
-		appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
-		};
+    	authDomain: "controle-de-partidas.firebaseapp.com",
+    	projectId: "controle-de-partidas",
+    	storageBucket: "controle-de-partidas.firebasestorage.app",
+    	messagingSenderId: "492501310950",
+    	appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
+    	};
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -167,20 +168,26 @@
               
               if (docSnap.exists()) {
                   const data = docSnap.data();
-                  const filaGeral = data.filaGeral || [];
-                  const filaEstrela = data.filaEstrela || [];
-                  jogadoresTravadosLocal = data.jogadoresTravados || {}; // Atualiza a variável local
-                  estrelasRegistradasLocal = data.estrelasRegistradas || []; // Atualiza a variável local
+                  // NOVO: Filtra jogadores travados localmente para não exibi-los
+                  const filaGeralProcessada = (data.filaGeral || []).filter(j => !data.jogadoresTravados[j]);
+                  const filaEstrelaProcessada = (data.filaEstrela || []).filter(j => !data.jogadoresTravados[j]);
+                  
+                  jogadoresTravadosLocal = data.jogadoresTravados || {}; 
+                  estrelasRegistradasLocal = data.estrelasRegistradas || []; 
 
-                  // Filtrar jogadores travados e aplicar classes de destaque
-                  const filaGeralFiltrada = filaGeral.filter(j => !jogadoresTravadosLocal[j]);
-                  const filaEstrelaFiltrada = filaEstrela.filter(j => !jogadoresTravadosLocal[j]);
-
-                  filaGeralEl.innerHTML = filaGeralFiltrada.map((j, i) => {
+                  filaGeralEl.innerHTML = filaGeralProcessada.map((j, i) => { 
                       let destaqueClass = '';
+                      // Aplica as classes de destaque da fila geral conforme as posições
                       if (i === 0) destaqueClass = 'proximo-jogador-geral-1';
                       else if (i === 1) destaqueClass = 'proximo-jogador-geral-2';
                       else if (i === 2) destaqueClass = 'proximo-jogador-geral-3';
+                      else if (i === 3) destaqueClass = 'proximo-jogador-geral-4';
+                      else if (i === 4) destaqueClass = 'proximo-jogador-geral-5';
+                      else if (i === 5) destaqueClass = 'proximo-jogador-geral-6';
+                      else if (i === 6) destaqueClass = 'proximo-jogador-geral-7';
+                      else if (i === 7) destaqueClass = 'proximo-jogador-geral-8';
+                      else if (i === 8) destaqueClass = 'proximo-jogador-geral-9';
+
 
                       return `
                         <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
@@ -188,11 +195,14 @@
                         </li>
                       `;
                   }).join('');
-                  if (filaGeralFiltrada.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia ou todos travados.</li>';
+                  if (filaGeralProcessada.length === 0) filaGeralEl.innerHTML = '<li class="text-gray-500">Fila geral vazia ou todos travados.</li>';
 
-                  filaEstrelaEl.innerHTML = filaEstrelaFiltrada.map((j, i) => {
+                  filaEstrelaEl.innerHTML = filaEstrelaProcessada.map((j, i) => { // Usa filaEstrelaFiltrada
                       let destaqueClass = '';
-                      if (i === 0) destaqueClass = 'proximo-jogador-estrela';
+                      // Aplica as classes de destaque da fila estrela
+                      if (i === 0) destaqueClass = 'proximo-jogador-estrela-1'; 
+                      else if (i === 1) destaqueClass = 'proximo-jogador-estrela-2';
+                      else if (i === 2) destaqueClass = 'proximo-jogador-estrela-3';
                       
                       return `
                         <li class="flex items-center py-1 text-gray-700 ${destaqueClass} px-2 rounded-md">
@@ -200,7 +210,7 @@
                         </li>
                       `;
                   }).join('');
-                  if (filaEstrelaFiltrada.length === 0) filaEstrelaEl.innerHTML = '<li class="text-gray-500">Fila estrela vazia ou todos travados.</li>';
+                  if (filaEstrelaProcessada.length === 0) filaEstrelaEl.innerHTML = '<li class="text-gray-500">Fila estrela vazia ou todos travados.</li>';
 
                   console.log("Filas atualizadas:", data);
               } else {
@@ -233,7 +243,7 @@
 
 
           // Escutar Histórico de Partidas (AGORA SEM LIMITE)
-          const q = query(historicoCollectionRef, orderBy("data", "desc"));
+          const q = query(historicoCollectionRef, orderBy("data", "desc")); 
           onSnapshot(q, (querySnapshot) => {
               const listaHistoricoEl = document.getElementById('visualizarHistorico');
               listaHistoricoEl.innerHTML = '';
@@ -448,6 +458,7 @@
             
             <div id="ultimoPontoBalao" class="mt-6 p-3 bg-indigo-500 text-white font-bold text-xl rounded-lg shadow-md hidden animate-fade-in-out">
                 </div>
+
             <div class="historico-pontos-partida mt-6 text-left border-t border-gray-200 pt-4">
                 <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">Histórico de Pontos da Partida</h3>
                 <div class="flex justify-between font-semibold text-gray-600 mb-2 px-2">
@@ -457,7 +468,8 @@
                 <ul id="listaHistoricoPontos" class="space-y-1">
                     </ul>
             </div>
-            </div>
+
+        </div>
 
         <div class="bg-white p-6 rounded-xl shadow-lg mt-5">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Fila Geral</h2>
