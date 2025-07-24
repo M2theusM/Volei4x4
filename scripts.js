@@ -337,7 +337,7 @@ function iniciarNovoJogo() {
     if (!primeiraInicializacaoConcluida) {
         if (filaGeral.length === 0 && filaEstrela.length === 0) {
             filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela","Rafael", "Wendel"];
-            filaEstrela = ["Daniele", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
+            filaEstrela = ["Daniele", "Gabi", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
             estrelasRegistradas = [...filaEstrela];
         }
         
