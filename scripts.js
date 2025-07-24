@@ -1156,6 +1156,1170 @@ function atualizarStatusPartida() {
     if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
         statusText = `🚨 ATENÇÃO: Ambos os times em ${minPontos -1} pontos. Próximo ponto define se alguém vence ou ambos saem!`;
         displayStatus = true;
+    } else if (placarA >= minPontos - 1 && placarB >= minPontar um `div` com as informações do jogador e seu ícone de cadeado. Este `div` terá um `onclick` para a função `toggleLock()`.
+
+### **`scripts.js` (Site de Controle de Partidas - COMPLETO E ATUALIZADO)**
+
+Esta versão inclui a correção para filtrar chaves vazias em `jogadoresTravados` antes de salvar no Firestore. A modificação para os botões de ação na fila foi revisada.
+
+```javascript
+// Previne o zoom no iOS
+document.addEventListener('touchstart', function(event) {
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
+});
+
+let filaGeral = [];
+let filaEstrela = [];
+let estrelasRegistradas = [];
+let timeA = [];
+let timeB = [];
+let vitoriasA = 0; // Vitórias consecutivas do time A
+let vitoriasB = 0; // Vitórias consecutivas do time B
+let placarA = 0;
+let placarB = 0;
+let jogadoresStats = {}; // { "NomeDoJogador": { pontos: 0, vitorias: 0, derrotas: 0 } }
+let jogadoresTravados = {}; // { "NomeDoJogador": true/false }
+let logPontosPartidaAtual = []; // Armazena o histórico de pontos da partida atual
+
+let pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
+let tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
+let estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1; // Agora representa o MÍNIMO
+let jogadoresPorTime = parseInt(localStorage.getItem('jogadoresPorTime')) || 4;
+let maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 5;
+
+// Variável de controle para o primeiro acesso
+let primeiraInicializacaoConcluida = localStorage.getItem('primeiraInicializacaoConcluida') === 'true';
+
+// O histórico de partidas não será persistido entre recarregamentos
+let historicoPartidas = [];
+let historicoEstados = [];
+const MAX_UNDO_HISTORY = 30;
+
+// Funções para Desfazer Ação
+function salvarEstadoAtual() {
+    const estado = {
+        filaGeral: JSON.parse(JSON.stringify(filaGeral)),
+        filaEstrela: JSON.parse(JSON.stringify(filaEstrela)),
+        estrelasRegistradas: JSON.parse(JSON.stringify(estrelasRegistradas)),
+        timeA: JSON.parse(JSON.stringify(timeA)),
+        timeB: JSON.parse(JSON.stringify(timeB)),
+        vitoriasA: vitoriasA,
+        vitoriasB: vitoriasB,
+        placarA: placarA,
+        placarB: placarB,
+        jogadoresStats: JSON.parse(JSON.stringify(jogadoresStats)),
+        jogadoresTravados: JSON.parse(JSON.stringify(jogadoresTravados)), // Salva o estado de travados
+        logPontosPartidaAtual: JSON.parse(JSON.stringify(logPontosPartidaAtual)), // Armazena o log de pontos
+        historicoPartidas: JSON.parse(JSON.stringify(historicoPartidas)),
+    };
+    historicoEstados.push(estado);
+    if (historicoEstados.length > MAX_UNDO_HISTORY) {
+        historicoEstados.shift();
+    }
+}
+
+function restaurarEstado(estado) {
+    filaGeral = estado.filaGeral;
+    filaEstrela = estado.filaEstrela;
+    estrelasRegistradas = estado.estrelasRegistradas;
+    timeA = estado.timeA;
+    timeB = estado.timeB;
+    vitoriasA = estado.vitoriasA;
+    vitoriasB = estado.vitoriasB;
+    placarA = estado.placarA;
+    placarB = estado.placarB;
+    jogadoresStats = estado.jogadoresStats;
+    jogadoresTravados = estado.jogadoresTravados; // Restaura o estado de travados
+    historicoPartidas = estado.historicoPartidas;
+}
+
+function desfazerUltimaAcao() {
+    if (historicoEstados.length > 0) {
+        const estadoAnterior = historicoEstados.pop();
+        restaurarEstado(estadoAnterior);
+        atualizarTela();
+    } else {
+        alert("Nenhuma ação para desfazer.");
+    }
+}
+
+
+// Função para carregar as configurações iniciais
+function carregarDadosIniciais() {
+    pontosVitoria = parseInt(localStorage.getItem('pontosVitoria')) || 12;
+    tipoDesempate = localStorage.getItem('tipoDesempate') || 'adicional';
+    estrelasPorTime = parseInt(localStorage.getItem('estrelasPorTime')) || 1;
+    jogadoresPorTime = parseInt(localStorage.getItem('jogadoresPorTime')) || 4;
+    maxVitoriasConsecutivas = parseInt(localStorage.getItem('maxVitoriasConsecutivas')) || 5;
+
+    // Carregar jogadoresStats e jogadoresTravados do localStorage
+    const savedJogadoresStats = localStorage.getItem('jogadoresStats');
+    if (savedJogadoresStats) {
+        jogadoresStats = JSON.parse(savedJogadoresStats);
+    } else {
+        jogadoresStats = {}; // Garante que seja um objeto vazio se não houver dados salvos
+    }
+
+    const savedJogadoresTravados = localStorage.getItem('jogadoresTravados');
+    if (savedJogadoresTravados) {
+        jogadoresTravados = JSON.parse(savedJogadoresTravados);
+    } else {
+        jogadoresTravados = {}; // Garante que seja um objeto vazio se não houver dados salvos
+    }
+    
+    // Carregar estrelasRegistradas
+    const savedEstrelasRegistradas = localStorage.getItem('estrelasRegistradas');
+    if (savedEstrelasRegistradas) {
+        estrelasRegistradas = JSON.parse(savedEstrelasRegistradas);
+    } else {
+        estrelasRegistradas = []; // Garante que seja um array vazio se não houver dados salvos
+    }
+
+    // Carregar filas se existirem (para que não se percam ao recarregar a página)
+    const savedFilaGeral = localStorage.getItem('filaGeral');
+    if (savedFilaGeral) {
+        filaGeral = JSON.parse(savedFilaGeral);
+    } else {
+        filaGeral = []; // Garante que seja um array vazio se não houver dados salvos
+    }
+    const savedFilaEstrela = localStorage.getItem('filaEstrela');
+    if (savedFilaEstrela) {
+        filaEstrela = JSON.parse(savedFilaEstrela);
+    } else {
+        filaEstrela = []; // Garante que seja um array vazio se não houver dados salvos
+    }
+}
+
+function salvarConfiguracoes() {
+    const novosPontosVitoria = parseInt(document.getElementById('pontosPartida').value);
+    const novoTipoDesempate = document.getElementById('tipoDesempate').value;
+    const novasEstrelasPorTime = parseInt(document.getElementById('estrelasPorTime').value); // Mínimo de estrelas
+    const novosJogadoresPorTime = parseInt(document.getElementById('jogadoresPorTime').value);
+    const novoMaxVitoriasConsecutivas = parseInt(document.getElementById('maxVitoriasConsecutivas').value);
+
+    // Salvar as configurações antigas para comparar se jogadoresPorTime ou estrelasPorTime mudaram
+    const oldJogadoresPorTime = jogadoresPorTime;
+    const oldEstrelasPorTime = estrelasPorTime;
+
+
+    if (novosPontosVitoria > 0 && novasEstrelasPorTime >= 0 && novosJogadoresPorTime >= 2 && novosJogadoresPorTime <= 6 && novoMaxVitoriasConsecutivas >= 1 && novoMaxVitoriasConsecutivas <= 7) {
+        if (novasEstrelasPorTime > novosJogadoresPorTime) {
+            alert("O número mínimo de estrelas por time não pode ser maior que o total de jogadores por time.");
+            return;
+        }
+
+        pontosVitoria = novosPontosVitoria;
+        tipoDesempate = novoTipoDesempate;
+        estrelasPorTime = novasEstrelasPorTime;
+        jogadoresPorTime = novosJogadoresPorTime;
+        maxVitoriasConsecutivas = novoMaxVitoriasConsecutivas;
+
+        localStorage.setItem('pontosVitoria', pontosVitoria);
+        localStorage.setItem('tipoDesempate', tipoDesempate);
+        localStorage.setItem('estrelasPorTime', estrelasPorTime);
+        localStorage.setItem('jogadoresPorTime', jogadoresPorTime);
+        localStorage.setItem('maxVitoriasConsecutivas', maxVitoriasConsecutivas);
+
+        fecharConfiguracoes();
+
+        // Verificar se a quantidade de jogadores/estrelas por time mudou e recompor
+        if (oldJogadoresPorTime !== jogadoresPorTime || oldEstrelasPorTime !== estrelasPorTime) {
+            recomporTimesAposConfiguracao();
+        } else {
+            // Se apenas outras configs mudaram (ex: pontosVitoria), só atualiza a tela
+            atualizarTela();
+        }
+    } else {
+        alert("Por favor, insira valores válidos para as configurações:\n- Pontos para vencer: maior que 0\n- Mín. estrelas por time: maior ou igual a 0\n- Jogadores por time: entre 2 e 6\n- Máx. vitórias consecutivas: entre 1 e 7.");
+    }
+}
+
+// Função para recompor os times imediatamente após a mudança de configuração
+function recomporTimesAposConfiguracao() {
+    salvarEstadoAtual(); // Salva o estado atual antes de recompor
+
+    let todosJogadoresEmCampo = [...timeA, ...timeB];
+    let estrelasEmCampo = todosJogadoresEmCampo.filter(j => estrelasRegistradas.includes(j));
+    let geraisEmCampo = todosJogadoresEmCampo.filter(j => !estrelasRegistradas.includes(j));
+
+    // Resetar times para reconstruir
+    timeA = [];
+    timeB = [];
+
+    const jogadoresNecessariosPorTime = jogadoresPorTime;
+    const estrelasNecessariasPorTime = estrelasPorTime;
+
+    // ----- Recompor Time A -----
+    // Priorizar estrelas existentes
+    let estrelasParaTimeA = estrelasEmCampo.splice(0, estrelasNecessariasPorTime);
+    timeA.push(...estrelasParaTimeA);
+
+    // Priorizar gerais existentes
+    let geraisParaTimeA = geraisEmCampo.splice(0, jogadoresNecessariosPorTime - timeA.length);
+    timeA.push(...geraisParaTimeA);
+
+    // Adicionar da fila geral/estrela se necessário (para Time A)
+    while (timeA.length < jogadoresNecessariosPorTime) {
+        if (timeA.filter(j => estrelasRegistradas.includes(j)).length < estrelasNecessariasPorTime) {
+            // Tenta pegar estrela da fila Estrela
+            const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+            if (estrelaDisponivel) {
+                timeA.push(estrelaDisponivel);
+                filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+            } else {
+                // Se não há estrelas disponíveis na fila, tenta da fila geral se permitido pelas regras
+                const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+                if (geralDisponivel) {
+                     timeA.push(geralDisponivel);
+                     filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+                } else {
+                    break; // Não há jogadores disponíveis
+                }
+            }
+        } else {
+            // Tenta pegar geral da fila Geral
+            const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+            if (geralDisponivel) {
+                timeA.push(geralDisponivel);
+                filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+            } else {
+                 // Tenta pegar estrela da fila estrela, se for para preencher vaga geral
+                const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+                if (estrelaDisponivel) {
+                    timeA.push(estrelaDisponivel);
+                    filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+                } else {
+                    break; // Não há jogadores disponíveis
+                }
+            }
+        }
+    }
+
+
+    // ----- Recompor Time B ----- (Lógica similar para Time B)
+    // Priorizar estrelas e gerais que sobraram do campo
+    let estrelasParaTimeB = estrelasEmCampo.splice(0, estrelasNecessariasPorTime); // Estrelas que sobraram de estrelasEmCampo
+    timeB.push(...estrelasParaTimeB);
+
+    let geraisParaTimeB = geraisEmCampo.splice(0, jogadoresNecessariosPorTime - timeB.length); // Gerais que sobraram de geraisEmCampo
+    timeB.push(...geraisParaTimeB);
+    
+    while (timeB.length < jogadoresNecessariosPorTime) {
+        if (timeB.filter(j => estrelasRegistradas.includes(j)).length < estrelasNecessariasPorTime) {
+            const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+            if (estrelaDisponivel) {
+                timeB.push(estrelaDisponivel);
+                filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+            } else {
+                const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+                if (geralDisponivel) {
+                     timeB.push(geralDisponivel);
+                     filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+                } else {
+                    break;
+                }
+            }
+        } else {
+            const geralDisponivel = filaGeral.find(j => !jogadoresTravados[j]);
+            if (geralDisponivel) {
+                timeB.push(geralDisponivel);
+                filaGeral = filaGeral.filter(j => j !== geralDisponivel);
+            } else {
+                 const estrelaDisponivel = filaEstrela.find(j => !jogadoresTravados[j]);
+                if (estrelaDisponivel) {
+                    timeB.push(estrelaDisponivel);
+                    filaEstrela = filaEstrela.filter(j => j !== estrelaDisponivel);
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Jogadores que sobraram dos "em campo" originais e não foram realocados para timeA/B voltam para as filas
+    const jogadoresSobrandoDoCampo = [...estrelasEmCampo, ...geraisEmCampo];
+    jogadoresSobrandoDoCampo.forEach(j => {
+        if (estrelasRegistradas.includes(j)) {
+            filaEstrela.push(j);
+        } else {
+            filaGeral.push(j);
+        }
+        if (jogadoresTravados[j] === undefined) {
+            jogadoresTravados[j] = false; 
+        }
+    });
+
+    // Garante que jogadores em campo estão destravados
+    timeA.forEach(j => jogadoresTravados[j] = false);
+    timeB.forEach(j => jogadoresTravados[j] = false);
+
+    // Salvar todos os estados atualizados
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+    
+    // Salvar o estado do jogo no Firestore após recomposição de times
+    salvarEstadoDoJogoNoFirestore();
+
+    atualizarTela();
+}
+
+function abrirConfiguracoes() {
+    document.getElementById('pontosPartida').value = pontosVitoria;
+    document.getElementById('tipoDesempate').value = tipoDesempate;
+    document.getElementById('estrelasPorTime').value = estrelasPorTime;
+    document.getElementById('jogadoresPorTime').value = jogadoresPorTime;
+    document.getElementById('maxVitoriasConsecutivas').value = maxVitoriasConsecutivas;
+    document.getElementById('modalConfig').classList.remove('hidden');
+}
+
+function fecharConfiguracoes() {
+    document.getElementById('modalConfig').classList.add('hidden');
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function iniciarNovoJogo() {
+    salvarEstadoAtual();
+    timeA = [];
+    timeB = [];
+    vitoriasA = 0;
+    vitoriasB = 0;
+    placarA = 0;
+    placarB = 0;
+    logPontosPartidaAtual = []; // Limpa o log de pontos para o novo jogo
+
+    if (!primeiraInicializacaoConcluida) {
+        if (filaGeral.length === 0 && filaEstrela.length === 0) {
+            filaGeral = ["Anderson", "Danilo", "Edinho", "Fernando", "Iba", "Julio Cesar", "Kauan", "Lucas", "Marciano", "Mateus Henrique", "Matheus Lael", "Matheus Matos", "Matheus Venturim", "Odair", "Pâmela","Rafael", "Wendel"];
+            filaEstrela = ["Daniele", "Guilherme Basso", "Guilherme Ramires", "Lucélia", "Paty", "Taynara"];
+            estrelasRegistradas = [...filaEstrela];
+        }
+        
+        if (localStorage.getItem('primeiraInicializacaoAlertExibido') !== 'true') {
+            alert("Bem-vindo! Para começar, adicione os jogadores manualmente nas 'Fila Geral' e/ou 'Fila com Estrela' e, em seguida, preencha os times A e B em quadra para iniciar a primeira partida.");
+            localStorage.setItem('primeiraInicializacaoAlertExibido', 'true');
+        }
+        
+        const allKnownPlayers = new Set([...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
+        allKnownPlayers.forEach(nome => {
+            if (!jogadoresStats[nome]) {
+                jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            }
+            if (jogadoresTravados[nome] === undefined) {
+                jogadoresTravados[nome] = false; 
+            }
+        });
+        localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+        localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+
+        salvarEstadoDoJogoNoFirestore(); 
+        atualizarTela();
+        return; 
+    }
+
+    // --- Se não for a primeira inicialização, continua com a lógica automática de formação de times ---
+    estrelasRegistradas = Object.keys(jogadoresStats).filter(nome => estrelasRegistradas.includes(nome) || filaEstrela.includes(nome));
+    
+    const todosJogadoresAtuais = new Set([...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
+    todosJogadoresAtuais.forEach(nome => {
+        if (!jogadoresStats[nome]) {
+            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        if (jogadoresTravados[nome] === undefined) {
+             jogadoresTravados[nome] = false; 
+        }
+    });
+
+    const jogadoresGeraisParaAlocar = filaGeral.filter(j => !jogadoresTravados[j]);
+    const jogadoresEstrelaParaAlocar = filaEstrela.filter(j => !jogadoresTravados[j]);
+
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime);    
+    const jogadoresGeraisPorTime = jogadoresPorTime - estrelasParaAlocar;
+
+    if (jogadoresGeraisPorTime < 0) {
+        alert(`Configuração inválida: O número de jogadores por time (${jogadoresPorTime}) é menor que o mínimo de estrelas por time (${estrelasParaAlocar}). Ajuste nas configurações.`);
+        atualizarTela();
+        return;
+    }
+
+    if (jogadoresEstrelaParaAlocar.length < (estrelasParaAlocar * 2) || jogadoresGeraisParaAlocar.length < (jogadoresGeraisPorTime * 2)) {
+        alert(`É necessário ter pelo menos ${estrelasParaAlocar * 2} jogadores estrela e ${jogadoresGeraisPorTime * 2} jogadores na fila geral disponíveis para iniciar um jogo com ${jogadoresPorTime} jogadores por time (sendo ${estrelasParaAlocar} estrelas no mínimo).`);
+        atualizarTela();
+        return;
+    }
+
+    for (let i = 0; i < estrelasParaAlocar; i++) {
+        timeA.push(jogadoresEstrelaParaAlocar.shift());
+        timeB.push(jogadoresEstrelaParaAlocar.shift());
+    }
+
+    for (let i = 0; i < jogadoresGeraisPorTime; i++) {
+        timeA.push(jogadoresGeraisParaAlocar.shift());
+        timeB.push(jogadoresGeraisParaAlocar.shift());
+    }
+
+    // Atualiza as filas filtrando os jogadores que foram para os times
+    filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
+    filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
+    
+    // Garante que jogadores em campo estão destravados
+    timeA.forEach(j => jogadoresTravados[j] = false);
+    timeB.forEach(j => jogadoresTravados[j] = false);
+    
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+
+
+    atualizarTela();
+}
+
+function preencherTimesManualmente() {
+    salvarEstadoAtual();
+    timeA = [];
+    timeB = [];
+    const selectsA = document.querySelectorAll('#selectsTimeA select');
+    const selectsB = document.querySelectorAll('#selectsTimeB select');
+
+    let jogadoresSelecionados = new Set();
+    let erros = [];
+
+    // Processar Time A
+    selectsA.forEach((select, index) => {
+        const nomeJogador = select.value;
+        if (nomeJogador && nomeJogador !== '-1') {
+            if (jogadoresSelecionados.has(nomeJogador)) {
+                erros.push(`O jogador "${nomeJogador}" foi selecionado mais de uma vez para o Time A.`);
+            } else {
+                timeA.push(nomeJogador);
+                jogadoresSelecionados.add(nomeJogador);
+            }
+        } else {
+            erros.push(`Por favor, selecione um jogador para a posição ${index + 1} do Time A.`);
+        }
+    });
+
+    // Processar Time B
+    selectsB.forEach((select, index) => {
+        const nomeJogador = select.value;
+        if (nomeJogador && nomeJogador !== '-1') {
+            if (jogadoresSelecionados.has(nomeJogador)) {
+                erros.push(`O jogador "${nomeJogador}" já foi selecionado para outro time ou posição.`);
+            } else {
+                timeB.push(nomeJogador);
+                jogadoresSelecionados.add(nomeJogador);
+            }
+        } else {
+            erros.push(`Por favor, selecione um jogador para a posição ${index + 1} do Time B.`);
+        }
+    });
+
+    if (erros.length > 0) {
+        alert("Erros ao preencher os times:\n" + erros.join('\n'));
+        restaurarEstado(historicoEstados.pop()); 
+        atualizarTela();
+        return;
+    }
+
+    // Validação de mínimo de estrelas
+    const estrelasTimeA = timeA.filter(j => estrelasRegistradas.includes(j)).length;
+    const estrelasTimeB = timeB.filter(j => estrelasRegistradas.includes(j)).length;
+
+    if (estrelasTimeA < estrelasPorTime || estrelasTimeB < estrelasPorTime) {
+        alert(`Cada time deve ter no mínimo ${estrelasPorTime} estrela(s). Time A tem ${estrelasTimeA}, Time B tem ${estrelasTimeB}.`);
+        restaurarEstado(historicoEstados.pop()); 
+        atualizarTela();
+        return;
+    }
+
+
+    // Remover jogadores selecionados das filas
+    filaGeral = filaGeral.filter(j => !jogadoresSelecionados.has(j));
+    filaEstrela = filaEstrela.filter(j => !jogadoresSelecionados.has(j));
+
+    primeiraInicializacaoConcluida = true;
+    localStorage.setItem('primeiraInicializacaoConcluida', 'true');
+    localStorage.removeItem('primeiraInicializacaoAlertExibido'); 
+
+    const allKnownPlayers = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
+    allKnownPlayers.forEach(nome => {
+        if (!jogadoresStats[nome]) {
+             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        if (timeA.includes(nome) || timeB.includes(nome)) {
+            jogadoresTravados[nome] = false; 
+        } 
+        else if (jogadoresTravados[nome] === undefined) {
+            jogadoresTravados[nome] = false; 
+        }
+    });
+
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral)); 
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+
+
+    alert("Times preenchidos com sucesso! A partida pode começar.");
+    atualizarTela();
+
+    salvarEstadoDoJogoNoFirestore();
+}
+
+function trocarJogador(time, indexQuadra, tipoFilaOrigem, indexFilaString) {
+    salvarEstadoAtual();
+    const indexFila = parseInt(indexFilaString);
+
+    if (isNaN(indexFila) || indexFila < 0) {
+        console.log("Seleção inválida de jogador para troca.");
+        return;
+    }
+
+    let jogadorParaEntrar;
+    let filaOrigemArray;
+
+    if (tipoFilaOrigem === 'geral') {
+        filaOrigemArray = filaGeral;
+    } else if (tipoFilaOrigem === 'estrela') {
+        filaOrigemArray = filaEstrela;
+    } else {
+        console.error("Tipo de fila de origem desconhecido:", tipoFilaOrigem);
+        return;
+    }
+
+    if (indexFila >= filaOrigemArray.length) {
+        console.error("Índice de jogador para entrar fora dos limites da fila:", indexFila, filaOrigemArray);
+        return;
+    }
+
+    jogadorParaEntrar = filaOrigemArray[indexFila];
+
+    if (jogadoresTravados[jogadorParaEntrar]) {
+        alert("Este jogador está travado e não pode entrar em quadra. Destrave-o na fila primeiro.");
+        atualizarTela();
+        return;
+    }
+
+    let jogadorParaSair;
+    const equipeAlvo = time === 'A' ? timeA : timeB;
+    jogadorParaSair = equipeAlvo[indexQuadra];
+
+    const isEstrelaSaindo = estrelasRegistradas.includes(jogadorParaSair);
+    const isEstrelaEntrando = estrelasRegistradas.includes(jogadorParaEntrar);
+    let estrelasNoTimeAtual = equipeAlvo.filter(j => estrelasRegistradas.includes(j)).length;
+
+    if (isEstrelaSaindo && !isEstrelaEntrando) {
+        if (estrelasNoTimeAtual - 1 < estrelasPorTime) {
+            alert(`Não é permitido ter menos de ${estrelasPorTime} estrela(s) no time. Esta troca resultaria em ${estrelasNoTimeAtual - 1} estrela(s).`);
+            atualizarTela();
+            return;
+        }
+    }
+    
+    if (time === 'A') {
+        timeA[indexQuadra] = jogadorParaEntrar;
+    } else {
+        timeB[indexQuadra] = jogadorParaEntrar;
+    }
+
+    filaOrigemArray.splice(indexFila, 1);
+
+    // O jogador que saiu volta para a fila correspondente
+    if (estrelasRegistradas.includes(jogadorParaSair)) {
+        filaEstrela.push(jogadorParaSair);
+    } else {
+        filaGeral.push(jogadorParaSair);
+    }
+    
+    // Garante que o jogador que entra na quadra está destravado.
+    jogadoresTravados[jogadorParaEntrar] = false; 
+    
+    // O jogador que sai deve manter seu estado de travamento que tinha antes.
+    if (jogadoresTravados[jogadorParaSair] === undefined) {
+        jogadoresTravados[jogadorParaSair] = false; 
+    }
+
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); 
+
+    atualizarTela();
+
+    salvarEstadoDoJogoNoFirestore();
+}
+
+function verificarVitoriaPartida() {
+    const minPontos = pontosVitoria;
+
+    // REGRA 1: Verificação para "Sai os Dois" (tem a maior prioridade e é muito específica)
+    if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
+        return 'ambosSaem';
+    }
+
+    // Define se o jogo está na "zona de desempate"
+    const emDesempate = placarA >= minPontos - 1 && placarB >= minPontos - 1;
+
+    if (emDesempate) {
+        // --- MODO DESEMPATE ATIVO ---
+        // Se entrou aqui, SÓ as regras de desempate valem.
+
+        if (tipoDesempate === 'diferenca') {
+            if (placarA >= minPontos && placarA >= placarB + 2) return 'A';
+            if (placarB >= minPontos && placarB >= placarA + 2) return 'B';
+        }    
+        else if (tipoDesempate === 'adicional') {
+            const pontoVitoriaAdicional = minPontos + 2;
+            if (placarA === pontoVitoriaAdicional) return 'A';
+            if (placarB === pontoVitoriaAdicional) return 'B';
+        }
+        // Se a regra é 'saiOsDois' mas o placar já passou de minPontos-1 (e não terminou no empate exato),
+        // ela se comporta como uma regra de diferença de 2.
+        else if (tipoDesempate === 'saiOsDois') {
+            if (placarA >= minPontos && placarA >= placarB + 2) return 'A';
+            if (placarB >= minPontos && placarB >= placarA + 2) return 'B';
+        }
+
+    } else {
+        // --- MODO DE VITÓRIA PADRÃO ---
+        // Só entra aqui se o jogo NÃO está em desempate.
+        // O primeiro a atingir 'minPontos' vence.
+        if (placarA >= minPontos) return 'A';
+        if (placarB >= minPontos) return 'B';
+    }
+
+    // Se nenhuma condição de vitória foi atendida, o jogo continua.
+    return null;
+}
+
+function marcarPonto(time, jogador, tipoPonto = 'ponto_normal') {
+    salvarEstadoAtual();
+    if (!jogadoresStats[jogador]) {
+        jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
+    }
+    jogadoresStats[jogador].pontos++;
+
+    if (time === 'A') placarA++;
+    else placarB++;
+
+    logPontosPartidaAtual.push({
+        placarA: placarA,
+        placarB: placarB,
+        time: time,
+        jogador: jogador,
+        tipo: tipoPonto,
+        timestampLocal: new Date().toISOString()
+    });
+
+    if (!primeiraInicializacaoConcluida && (placarA > 0 || placarB > 0)) {
+        primeiraInicializacaoConcluida = true;
+        localStorage.setItem('primeiraInicializacaoConcluida', 'true');
+        localStorage.removeItem('primeiraInicializacaoAlertExibido'); 
+    }
+
+    const vencedor = verificarVitoriaPartida();
+    if (vencedor) {
+        registrarVitoria(vencedor);
+    }
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
+    atualizarTela();
+
+    salvarEstadoDoJogoNoFirestore(jogador, time, tipoPonto); 
+}
+
+function registrarVitoria(vencedor) {
+    salvarEstadoAtual();
+    if (vencedor === 'A') {
+        vitoriasA++;
+        vitoriasB = 0;
+        timeA.forEach(jogador => {
+            if (!jogadoresStats[jogador]) jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            jogadoresStats[jogador].vitorias++;
+        });
+        timeB.forEach(jogador => {
+            if (!jogadoresStats[jogador]) jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            jogadoresStats[jogador].derrotas++;
+        });
+    } else if (vencedor === 'B') {
+        vitoriasB++;
+        vitoriasA = 0;
+        timeB.forEach(jogador => {
+            if (!jogadoresStats[jogador]) jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            jogadoresStats[jogador].vitorias++;
+        });
+        timeA.forEach(jogador => {
+            if (!jogadoresStats[jogador]) jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            jogadoresStats[jogador].derrotas++;
+        });
+    } else if (vencedor === 'ambosSaem') {
+        [...timeA, ...timeB].forEach(jogador => {
+            if (!jogadoresStats[jogador]) jogadoresStats[jogador] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            jogadoresStats[jogador].derrotas++;
+        });
+    }
+
+    const partidaAtualParaHistorico = {
+        timeA: [...timeA],
+        timeB: [...timeB],
+        placarFinalA: placarA,
+        placarFinalB: placarB,
+        vencedor: vencedor === 'ambosSaem' ? 'Empate/Ambos Saíram' : `Time ${vencedor}`,
+        data: new Date().toLocaleString('pt-BR'),
+        detalhesPontos: [...logPontosPartidaAtual],
+        tempoInicioPartida: logPontosPartidaAtual.length > 0 ? logPontosPartidaAtual[0].timestampLocal : null,
+        tempoFimPartida: logPontosPartidaAtual.length > 0 ? logPontosPartidaAtual[logPontosPartidaAtual.length - 1].timestampLocal : null
+    };
+    historicoPartidas.unshift(partidaAtualParaHistorico);
+
+    const partidasCollectionRef = window.collection(window.db, 'historicoPartidas');
+    window.addDoc(partidasCollectionRef, {
+        ...partidaAtualParaHistorico,
+        data: window.serverTimestamp()
+    })
+    .then(() => { console.log("Partida finalizada salva no Firestore!"); })
+    .catch(error => { console.error("Erro ao salvar partida no Firestore: ", error); });
+
+    if (!primeiraInicializacaoConcluida) {
+        primeiraInicializacaoConcluida = true;
+        localStorage.setItem('primeiraInicializacaoConcluida', 'true');
+        localStorage.removeItem('primeiraInicializacaoAlertExibido'); 
+    }
+
+
+    let jogadoresParaFila = [];
+    if (vencedor === 'ambosSaem' || vitoriasA >= maxVitoriasConsecutivas || vitoriasB >= maxVitoriasConsecutivas) {
+        jogadoresParaFila = [...timeA, ...timeB];
+        timeA = [];
+        timeB = [];
+        vitoriasA = 0;
+        vitoriasB = 0;
+    } else if (vencedor === 'A') {
+        jogadoresParaFila = [...timeB];
+        timeB = [];
+    } else if (vencedor === 'B') {
+        jogadoresParaFila = [...timeA];
+        timeA = [];
+    }
+
+    shuffleArray(jogadoresParaFila);
+    jogadoresParaFila.forEach(j => {
+        if (jogadoresTravados[j] === undefined) {
+             jogadoresTravados[j] = false; 
+        }
+        if (estrelasRegistradas.includes(j)) {
+            filaEstrela.push(j);
+        } else {
+            filaGeral.push(j);
+        }
+    });
+
+    const filaGeralDisponivel = filaGeral.filter(j => !jogadoresTravados[j]);
+    const filaEstrelaDisponivel = filaEstrela.filter(j => !jogadoresTravados[j]);
+    
+    const estrelasParaAlocar = Math.max(0, estrelasPorTime);
+    const jogadoresGeraisPorTimeCalc = jogadoresPorTime - estrelasParaAlocar;
+
+    if (jogadoresGeraisPorTimeCalc < 0 && (timeA.length === 0 || timeB.length === 0)) {
+        alert(`Configuração inválida para formar novo(s) time(s): O número de jogadores por time (${jogadoresPorTime}) é menor que o mínimo de estrelas por time (${estrelasParaAlocar}). Ajuste nas configurações.`);
+        placarA = 0;
+        placarB = 0;
+        atualizarTela();
+        return;
+    }
+    
+    if (timeA.length === 0 && timeB.length === 0) {
+        if (filaEstrelaDisponivel.length >= (estrelasParaAlocar * 2) && filaGeralDisponivel.length >= (jogadoresGeraisPorTimeCalc * 2)) {
+            for (let i = 0; i < estrelasParaAlocar; i++) {
+                timeA.push(filaEstrelaDisponivel.shift());
+                timeB.push(filaEstrelaDisponivel.shift());
+            }
+            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
+                timeA.push(filaGeralDisponivel.shift());
+                timeB.push(filaGeralDisponivel.shift());
+            }
+            // Destravar os jogadores que entraram em campo
+            timeA.forEach(j => jogadoresTravados[j] = false);
+            timeB.forEach(j => jogadoresTravados[j] = false);
+        } else {
+            if (primeiraInicializacaoConcluida) {
+                alert("Não há jogadores suficientes disponíveis nas filas para formar novos times com o mínimo de estrelas configurado. Adicione mais jogadores ou destrave-os.");
+            }
+        }
+    } else if (timeB.length === 0) { // Time B saiu, formar novo Time B
+        if (filaEstrelaDisponivel.length >= estrelasParaAlocar && filaGeralDisponivel.length >= jogadoresGeraisPorTimeCalc) {
+            for (let i = 0; i < estrelasParaAlocar; i++) {
+                timeB.push(filaEstrelaDisponivel.shift());
+            }
+            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
+                timeB.push(filaGeralDisponivel.shift());
+            }
+            timeB.forEach(j => jogadoresTravados[j] = false); // Destravar novos jogadores do Time B
+        } else {
+            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time B com o mínimo de estrelas configurado.");
+        }
+    } else if (timeA.length === 0) { // Time A saiu, formar novo Time A
+        if (filaEstrelaDisponivel.length >= estrelasParaAlocar && filaGeralDisponivel.length >= jogadoresGeraisPorTimeCalc) {
+            for (let i = 0; i < estrelasParaAlocar; i++) {
+                timeA.push(filaEstrelaDisponivel.shift());
+            }
+            for (let i = 0; i < jogadoresGeraisPorTimeCalc; i++) {
+                timeA.push(filaGeralDisponivel.shift());
+            }
+            timeA.forEach(j => jogadoresTravados[j] = false); // Destravar novos jogadores do Time A
+        } else {
+            alert("Não há jogadores suficientes disponíveis nas filas para formar o Time A com o mínimo de estrelas configurado.");
+        }
+    }
+
+    filaGeral = filaGeral.filter(j => !timeA.includes(j) && !timeB.includes(j));
+    filaEstrela = filaEstrela.filter(j => !timeA.includes(j) && !timeB.includes(j));
+
+    placarA = 0;
+    placarB = 0;
+    logPontosPartidaAtual = []; // Zera o log de pontos da partida atual após finalizar a partida.
+
+    // Salvamento explícito e final de TODOS os estados relevantes após uma vitória.
+    const allKnownPlayersAfterVictory = new Set([...timeA, ...timeB, ...filaGeral, ...filaEstrela, ...Object.keys(jogadoresStats)]);
+    allKnownPlayersAfterVictory.forEach(nome => {
+        if (!jogadoresStats[nome]) {
+             jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        if (timeA.includes(nome) || timeB.includes(nome)) {
+            jogadoresTravados[nome] = false;
+        } 
+        else if (jogadoresTravados[nome] === undefined) {
+            jogadoresTravados[nome] = false; 
+        }
+    });
+
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); // Salva o estado atualizado
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+
+    atualizarTela();
+}
+
+
+function resetarPlacar() {
+    salvarEstadoAtual();
+    placarA = 0;
+    placarB = 0;
+    vitoriasA = 0;
+    vitoriasB = 0;
+    logPontosPartidaAtual = []; // Limpa o log de pontos se o placar for resetado
+    atualizarTela();
+    salvarEstadoDoJogoNoFirestore(null, null, 'reset'); 
+}
+
+function adicionarParticipante(tipoFila) {
+    salvarEstadoAtual();
+    let nomeInput;
+    let filaAlvo;
+    let posicaoSelect;
+
+    if (tipoFila === 'geral') {
+        nomeInput = document.getElementById("novoNomeGeral");
+        filaAlvo = filaGeral;
+        posicaoSelect = document.getElementById("posicaoGeral");
+    } else if (tipoFila === 'estrela') {
+        nomeInput = document.getElementById("novoNomeEstrela");
+        filaAlvo = filaEstrela;
+        posicaoSelect = document.getElementById("posicaoEstrela");
+    } else {
+        return;
+    }
+
+    const nome = nomeInput.value.trim();
+    const posicao = posicaoSelect.value;
+
+    if (nome) {
+        if (filaAlvo.includes(nome) || timeA.includes(nome) || timeB.includes(nome)) {
+            alert(`O jogador "${nome}" já existe na lista ou em campo.`);
+            return;
+        }
+
+        if (posicao === 'inicio') {
+            filaAlvo.unshift(nome);
+        } else {
+            filaAlvo.push(nome);
+        }
+
+        if (tipoFila === 'estrela' && !estrelasRegistradas.includes(nome)) {
+            estrelasRegistradas.push(nome);
+            localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+        }
+
+        if (!jogadoresStats[nome]) {
+            jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+        }
+        jogadoresTravados[nome] = false; 
+        localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
+        localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados)); 
+        localStorage.setItem('filaGeral', JSON.stringify(filaGeral)); 
+        localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+
+
+        nomeInput.value = "";
+        atualizarTela();
+        salvarEstadoDoJogoNoFirestore();
+    }
+}
+
+function removerParticipante(tipoFila, index) {
+    salvarEstadoAtual();
+    let filaAlvo;
+    if (tipoFila === 'geral') {
+        filaAlvo = filaGeral;
+    } else if (tipoFila === 'estrela') {
+        filaAlvo = filaEstrela;
+    } else {
+        return;
+    }
+
+    const nomeRemovido = filaAlvo.splice(index, 1)[0];
+    delete jogadoresTravados[nomeRemovido]; 
+    delete jogadoresStats[nomeRemovido]; 
+    
+    const estrelaIndex = estrelasRegistradas.indexOf(nomeRemovido);
+    if (estrelaIndex > -1) {
+        estrelasRegistradas.splice(estrelaIndex, 1);
+        localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+    }
+
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    atualizarTela();
+    salvarEstadoDoJogoNoFirestore();
+}
+
+
+function editarParticipante(tipoFila, index, novoNome) {
+    salvarEstadoAtual();
+    novoNome = novoNome.trim();
+    if (!novoNome) {
+        alert("O nome do participante não pode ser vazio.");
+        atualizarTela();    
+        return;
+    }
+
+    let nomeAntigo;
+    let filaAlvo;
+
+    if (tipoFila === 'geral') {
+        filaAlvo = filaGeral;
+    } else if (tipoFila === 'estrela') {
+        filaAlvo = filaEstrela;
+    } else {
+        return;
+    }
+
+    nomeAntigo = filaAlvo[index];
+
+    if (nomeAntigo === novoNome) {
+        return;
+    }
+
+    const nomeExistente = filaGeral.includes(novoNome) ||
+                            filaEstrela.includes(novoNome) ||
+                            timeA.includes(novoNome) ||
+                            timeB.includes(novoNome);
+
+    if (nomeExistente && nomeAntigo !== novoNome) {
+        alert(`O nome "${novoNome}" já está em uso. Por favor, escolha outro nome.`);
+        atualizarTela();    
+        return;
+    }
+
+    filaAlvo[index] = novoNome;
+
+    const estrelaIndex = estrelasRegistradas.indexOf(nomeAntigo);
+    if (estrelaIndex > -1) {
+        estrelasRegistradas[estrelaIndex] = novoNome;
+        localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+    }
+    if (tipoFila === 'estrela' && !estrelasRegistradas.includes(novoNome)) {
+        estrelasRegistradas.push(novoNome);
+        localStorage.setItem('estrelasRegistradas', JSON.stringify(estrelasRegistradas));
+    }
+
+
+    if (jogadoresStats[nomeAntigo]) {
+        jogadoresStats[novoNome] = jogadoresStats[nomeAntigo];
+        delete jogadoresStats[nomeAntigo];
+    } else {
+        jogadoresStats[novoNome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+    }
+
+    if (jogadoresTravados.hasOwnProperty(nomeAntigo)) {
+        jogadoresTravados[novoNome] = jogadoresTravados[nomeAntigo];
+        delete jogadoresTravados[nomeAntigo];
+    } else {
+        jogadoresTravados[novoNome] = false; 
+    }
+
+    timeA = timeA.map(j => j === nomeAntigo ? novoNome : j);
+    timeB = timeB.map(j => j === nomeAntigo ? novoNome : j);
+
+    localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats));
+    localStorage.setItem('jogadoresTravados', JSON.stringify(jogadoresTravados));
+    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    atualizarTela();
+    salvarEstadoDoJogoNoFirestore();
+}
+
+function embaralharFila(tipoFila) {
+    salvarEstadoAtual();
+    if (tipoFila === 'geral') {
+        shuffleArray(filaGeral);
+        localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+    } else if (tipoFila === 'estrela') {
+        shuffleArray(filaEstrela);
+        localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+    }
+    atualizarTela();
+    salvarEstadoDoJogoNoFirestore();
+}
+
+function atualizarRanking() {
+    const todosJogadores = new Set([...Object.keys(jogadoresStats), ...filaGeral, ...filaEstrela, ...timeA, ...timeB]);
+    const rankingArray = Array.from(todosJogadores)
+        .map(nome => {
+            if (!jogadoresStats[nome]) {
+                jogadoresStats[nome] = { pontos: 0, vitorias: 0, derrotas: 0 };
+            }
+            const score = (jogadoresStats[nome].vitorias * 3) + jogadoresStats[nome].pontos;
+            return { nome: nome, stats: stats, score: score }; 
+        })
+        .filter(entry => entry.stats.pontos > 0 || entry.stats.vitorias > 0 || entry.stats.derrotas > 0)
+        .sort((a, b) => {
+            if (b.score !== a.score) {
+                return b.score - a.score;
+            }
+            if (b.stats.vitorias !== a.stats.vitorias) {
+                return b.stats.vitorias - a.stats.vitorias;
+            }
+            if (b.stats.pontos !== a.stats.pontos) {
+                return b.stats.pontos - a.stats.pontos;
+            }
+            return a.stats.derrotas - b.stats.derrotas;
+        });
+
+    const rankingHTML = rankingArray.map((entry, index) => {
+        const nome = entry.nome;
+        const stats = entry.stats;
+        const score = entry.score; 
+
+        return `
+    <li class="flex items-center py-2 border-b border-gray-200 last:border-b-0">
+        <span class="ranking-pos font-bold text-blue-600 w-8 text-center">${index + 1}º</span>
+        <span class="ranking-nome flex-1 text-gray-700">${nome}</span>
+        <span class="ranking-score font-bold text-purple-600 w-16 text-right">${score}</span> 
+        <span class="ranking-vitorias font-bold text-blue-600 w-16 text-right">${stats.vitorias} V</span> 
+        <span class="ranking-pontos font-bold text-green-600 w-16 text-right">${stats.pontos} pts</span> 
+        <span class="ranking-derrotas font-bold text-red-600 w-16 text-right">${stats.derrotas} D</span> 
+    </li>
+`;
+    }).join('');
+
+    document.getElementById("ranking").innerHTML = rankingHTML || '<li class="text-center text-gray-500 py-4">Nenhum ponto ou partida registrada ainda</li>';
+}
+
+function atualizarDestaques() {
+    const todosJogadoresArray = Object.keys(jogadoresStats).map(nome => {
+        return {
+            nome: nome,
+            stats: jogadoresStats[nome],
+            score: (jogadoresStats[nome].vitorias * 3) + jogadoresStats[nome].pontos,
+            isEstrela: estrelasRegistradas.includes(nome)
+        };
+    }).filter(player => player.stats.pontos > 0 || player.stats.vitorias > 0 || player.stats.derrotas > 0); 
+
+    const jogadoresGerais = todosJogadoresArray.filter(player => !player.isEstrela);
+    const jogadoresEstrela = todosJogadoresArray.filter(player => !player.isEstrela);
+
+    const getDestaque = (arr, type) => {
+        if (arr.length === 0) return { nomes: ['N/A'], valor: 'N/A' }; 
+
+        let valorDestaque;
+        if (type === 'derrotas') { 
+            valorDestaque = Infinity; 
+            arr.forEach(player => {
+                if (player.stats.derrotas < valorDestaque) {
+                    valorDestaque = player.stats.derrotas;
+                }
+            });
+        } else { 
+            valorDestaque = -Infinity; 
+            arr.forEach(player => {
+                if (type === 'score' && player.score > valorDestaque) {
+                    valorDestaque = player.score;
+                } else if (type === 'pontos' && player.stats.pontos > valorDestaque) {
+                    valorDestaque = player.stats.pontos;
+                } else if (type === 'vitorias' && player.stats.vitorias > valorDestaque) {
+                    valorDestaque = player.stats.vitorias;
+                }
+            });
+        }
+
+        const destaquesEncontrados = arr.filter(player => {
+            if (type === 'score') return player.score === valorDestaque;
+            if (type === 'pontos') return player.stats.pontos === valorDestaque;
+            if (type === 'vitorias') return player.stats.vitorias === valorDestaque;
+            if (type === 'derrotas') return player.stats.derrotas === valorDestaque;
+            return false;
+        });
+
+        const nomesDestaque = destaquesEncontrados.map(player => player.nome);
+
+        return { nomes: nomesDestaque.length > 0 ? nomesDestaque : ['N/A'], valor: valorDestaque !== -Infinity && valorDestaque !== Infinity ? valorDestaque : 'N/A' };
+    };
+
+    // Destaques Fila Geral
+    const geralMelhorScore = getDestaque(jogadoresGerais, 'score');
+    const geralMaisPontos = getDestaque(jogadoresGerais, 'pontos');
+    const geralMaisVitorias = getDestaque(jogadoresGerais, 'vitorias');
+    const geralMenosDerrotas = getDestaque(jogadoresGerais, 'derrotas');
+
+    document.getElementById('destaqueGeralScore').innerText = `${geralMelhorScore.nomes.join(', ')} (${geralMelhorScore.valor})`;
+    document.getElementById('destaqueGeralPontos').innerText = `${geralMaisPontos.nomes.join(', ')} (${geralMaisPontos.valor})`;
+    document.getElementById('destaqueGeralVitorias').innerText = `${geralMaisVitorias.nomes.join(', ')} (${geralMaisVitorias.valor})`;
+    document.getElementById('destaqueGeralDerrotas').innerText = `${geralMenosDerrotas.nomes.join(', ')} (${geralMenosDerrotas.valor})`;
+
+    // Destaques Fila Estrela
+    const estrelaMelhorScore = getDestaque(jogadoresEstrela, 'score');
+    const estrelaMaisPontos = getDestaque(jogadoresEstrela, 'pontos');
+    const estrelaMaisVitorias = getDestaque(jogadoresEstrela, 'vitorias');
+    const estrelaMenosDerrotas = getDestaque(jogadoresEstrela, 'derrotas');
+
+    document.getElementById('destaqueEstrelaScore').innerText = `${estrelaMelhorScore.nomes.join(', ')} (${estrelaMelhorScore.valor})`;
+    document.getElementById('destaqueEstrelaPontos').innerText = `${estrelaMaisPontos.nomes.join(', ')} (${estrelaMaisPontos.valor})`;
+    document.getElementById('destaqueEstrelaVitorias').innerText = `${estrelaMaisVitorias.nomes.join(', ')} (${estrelaMaisVitorias.valor})`;
+    document.getElementById('destaqueEstrelaDerrotas').innerText = `${estrelaMenosDerrotas.nomes.join(', ')} (${estrelaMenosDerrotas.valor})`;
+}
+
+
+function atualizarStatusPartida() {
+    const statusEl = document.getElementById('statusPartida');
+    const minPontos = pontosVitoria;
+    let statusText = '';
+    let displayStatus = false;
+
+    if (tipoDesempate === 'saiOsDois' && placarA === (minPontos - 1) && placarB === (minPontos - 1)) {
+        statusText = `🚨 ATENÇÃO: Ambos os times em ${minPontos -1} pontos. Próximo ponto define se alguém vence ou ambos saem!`;
+        displayStatus = true;
     } else if (placarA >= minPontos - 1 && placarB >= minPontos - 1) {    
         if (tipoDesempate === 'diferenca') {
             statusText = `⚡ DESEMPATE: É necessário abrir 2 pontos de diferença para vencer.`;
@@ -1377,7 +2541,6 @@ function adicionarPontoAvulso(time, tipoPonto = 'ponto_avulso') { // NOVO: Adici
     localStorage.setItem('jogadoresStats', JSON.stringify(jogadoresStats)); 
     atualizarTela();
 
-    // Salva o estado do jogo no Firestore após cada ponto
     salvarEstadoDoJogoNoFirestore(null, time, tipoPonto); 
 }
 
