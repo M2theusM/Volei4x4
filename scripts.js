@@ -1634,6 +1634,7 @@ window.marcarPonto = marcarPonto;
 window.adicionarPontoAvulso = adicionarPontoAvulso; 
 window.removerPontoAvulso = removerPontoAvulso; 
 window.salvarEstadoDoJogoNoFirestore = salvarEstadoDoJogoNoFirestore;
+window.trocarJogador = trocarJogador;
 
 window.onclick = function(event) {
     if (event.target === document.getElementById('modalConfig')) {
