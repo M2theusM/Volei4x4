@@ -8,23 +8,42 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <style>
+        /* Fundo completamente transparente para overlay */
+        body {
+            background-color: rgba(0,0,0,0) !important;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Remove barras de rolagem */
+            display: flex;
+            align-items: center; /* Centraliza verticalmente */
+            justify-content: center; /* Centraliza horizontalmente */
+            min-height: 100vh; /* Ocupa a altura total da viewport */
+        }
+
+        /* Contêiner principal do placar para centralização */
+        .placar-container {
+            width: 100%;
+            max-width: 600px; /* Ajuste conforme a necessidade do seu overlay */
+            text-align: center;
+        }
+
         /* Estilos para o balão de último ponto */
         .animate-fade-in-out {
-            animation: fadeOut 3s forwards; /* 3 segundos de duração */
-            opacity: 0; /* Começa invisível */
+            animation: fadeOut 5s forwards; /* Duração do balão: 5 segundos */
+            opacity: 0; 
         }
 
         @keyframes fadeOut {
-            0% { opacity: 0; transform: translateY(20px); } /* Inicia de baixo e transparente */
+            0% { opacity: 0; transform: translateY(20px); } 
             10% { opacity: 1; transform: translateY(0); } /* Mais tempo visível no início */
-            90% { opacity: 1; transform: translateY(0); } /* Permanece visível */
-            100% { opacity: 0; transform: translateY(-20px); } /* Some para cima */
+            90% { opacity: 1; transform: translateY(0); } 
+            100% { opacity: 0; transform: translateY(-20px); } 
         }
 
         /* Estilo para destacar os próximos jogadores */
-        .proximo-jogador-geral-1 { background-color: #f3f4f6; } /* Tailwind's gray-100 ou um cinza bem claro */
-        .proximo-jogador-geral-2 { background-color: #f3f4f6; } /* Tailwind's gray-100 ou um cinza bem claro */
-        .proximo-jogador-geral-3 { background-color: #f3f4f6; } /* Tailwind's gray-100 ou um cinza bem claro */
+        .proximo-jogador-geral-1 { background-color: #f3f4f6; } /* Tailwind's gray-100 */
+        .proximo-jogador-geral-2 { background-color: #f3f4f6; } /* Tailwind's gray-100 */
+        .proximo-jogador-geral-3 { background-color: #f3f4f6; } /* Tailwind's gray-100 */
         .proximo-jogador-geral-4 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
         .proximo-jogador-geral-5 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
         .proximo-jogador-geral-6 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
@@ -35,6 +54,20 @@
         .proximo-jogador-estrela-1 { background-color: #f9fafb; } /* Tailwind's gray-50 */
         .proximo-jogador-estrela-2 { background-color: #e5e7eb; } /* Tailwind's gray-200 */
         .proximo-jogador-estrela-3 { background-color: #d1d5db; } /* Tailwind's gray-300 */
+
+        /* NOVO: Esconder nomes dos jogadores em quadra */
+        #timeAVisualizador, #timeBVisualizador {
+            display: none !important;
+        }
+
+        /* NOVO: Esconder a seção de Últimas Partidas */
+        #visualizarHistorico {
+            display: none !important;
+        }
+        /* Oculta o cabeçalho "Últimas Partidas" também */
+        .bg-white:last-of-type h2 { /* Assume que o último div.bg-white é o de Últimas Partidas */
+            display: none !important;
+        }
     </style>
 
     <script type="module">
@@ -50,6 +83,7 @@
     	messagingSenderId: "492501310950",
     	appId: "1:492501310950:web:05c7d208c0104a5c2c0a27"
     	};
+
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -88,7 +122,7 @@
                   vitoriasTimeAEl.textContent = data.vitoriasA !== undefined ? data.vitoriasA : 0;
                   vitoriasTimeBEl.textContent = data.vitoriasB !== undefined ? data.vitoriasB : 0;
 
-                  // Atualiza os jogadores em quadra
+                  // Atualiza os jogadores em quadra (mesmo que estejam ocultos por CSS)
                   const jogadoresTimeA = data.jogadoresTimeA || []; 
                   const jogadoresTimeB = data.jogadoresTimeB || []; 
 
@@ -118,7 +152,7 @@
                       ultimoPontoBalaoEl.classList.add('hidden');
                   }
 
-                  // Renderiza o histórico de pontos da partida atual
+                  // Renderiza o histórico de pontos da partida atual (mesmo que esteja oculto por CSS)
                   const historicoPontosDetalhado = data.historicoPontosDetalhado || [];
                   listaHistoricoPontosEl.innerHTML = historicoPontosDetalhado.map(ponto => {
                       const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
@@ -167,17 +201,16 @@
               
               if (docSnap.exists()) {
                   const data = docSnap.data();
-                  // Filtra jogadores travados localmente para não exibi-los
-                  const filaGeralFiltrada = (data.filaGeral || []).filter(j => !data.jogadoresTravados[j]);
-                  const filaEstrelaFiltrada = (data.filaEstrela || []).filter(j => !data.jogadoresTravados[j]);
-                  
-                  // Atualiza variáveis locais que são usadas para renderizar jogadores em quadra
-                  jogadoresTravadosLocal = data.jogadoresTravados || {}; 
-                  estrelasRegistradasLocal = data.estrelasRegistradas || []; 
+                  const filaGeral = data.filaGeral || [];
+                  const filaEstrela = data.filaEstrela || [];
+                  jogadoresTravadosLocal = data.jogadoresTravados || {}; // Atualiza a variável local
+                  estrelasRegistradasLocal = data.estrelasRegistradas || []; // Atualiza a variável local
+
+                  const filaGeralFiltrada = filaGeral.filter(j => !jogadoresTravadosLocal[j]);
+                  const filaEstrelaFiltrada = filaEstrela.filter(j => !jogadoresTravadosLocal[j]);
 
                   filaGeralEl.innerHTML = filaGeralFiltrada.map((j, i) => { 
                       let destaqueClass = '';
-                      // Aplica as classes de destaque da fila general conforme as posições
                       if (i === 0) destaqueClass = 'proximo-jogador-geral-1';
                       else if (i === 1) destaqueClass = 'proximo-jogador-geral-2';
                       else if (i === 2) destaqueClass = 'proximo-jogador-geral-3';
@@ -199,7 +232,6 @@
 
                   filaEstrelaEl.innerHTML = filaEstrelaFiltrada.map((j, i) => { 
                       let destaqueClass = '';
-                      // Aplica as classes de destaque da fila estrela
                       if (i === 0) destaqueClass = 'proximo-jogador-estrela-1'; 
                       else if (i === 1) destaqueClass = 'proximo-jogador-estrela-2';
                       else if (i === 2) destaqueClass = 'proximo-jogador-estrela-3';
@@ -242,194 +274,7 @@
           });
 
 
-          // Escutar Histórico de Partidas (AGORA SEM LIMITE)
-          const q = query(historicoCollectionRef, orderBy("data", "desc")); 
-          onSnapshot(q, (querySnapshot) => {
-              const listaHistoricoEl = document.getElementById('visualizarHistorico');
-              listaHistoricoEl.innerHTML = '';
-              if (querySnapshot.empty) {
-                  listaHistoricoEl.innerHTML = '<li class="text-center text-gray-500 py-2">Nenhuma partida anterior.</li>';
-              } else {
-                  querySnapshot.forEach((doc) => {
-                      const partida = doc.data();
-                      const li = document.createElement('li');
-                      
-                      let backgroundClass = '';
-                      if (partida.vencedor === 'Time A') backgroundClass = 'bg-green-100 border-green-200';
-                      else if (partida.vencedor === 'Time B') backgroundClass = 'bg-blue-100 border-blue-200';
-                      else backgroundClass = 'bg-yellow-100 border-yellow-200';
-
-                      // Converte Firestore Timestamp para objeto Date e formata
-                      const dataFormatada = partida.data ? new Date(partida.data.toDate()).toLocaleString('pt-BR') : 'N/A';
-                      
-                      // Cálculo do tempo de jogo
-                      let tempoDeJogo = 'N/A';
-                      if (partida.tempoInicioPartida && partida.tempoFimPartida) {
-                          const inicio = new Date(partida.tempoInicioPartida);
-                          const fim = new Date(partida.tempoFimPartida);
-                          const duracaoMs = fim - inicio;
-                          const minutos = Math.floor(duracaoMs / 60000);
-                          const segundos = Math.floor((duracaoMs % 60000) / 1000);
-                          tempoDeJogo = `${minutos}min ${segundos}s`;
-                      }
-
-                      li.className = `p-3 rounded-lg shadow-sm border ${backgroundClass} mb-2`;
-                      li.innerHTML = `
-                          <p class="font-semibold text-gray-800">${partida.placarFinalA} x ${partida.placarFinalB} - ${partida.vencedor}</p>
-                          <p class="text-sm text-gray-600">Time A: ${partida.timeA ? partida.timeA.join(', ') : 'N/A'}</p>
-                          <p class="text-sm text-gray-600">Time B: ${partida.timeB ? partida.timeB.join(', ') : 'N/A'}</p>
-                          <p class="text-xs text-gray-500">${dataFormatada} | Duração: ${tempoDeJogo}</p>
-                          <button class="toggle-detalhes text-blue-500 hover:underline mt-2">Ver detalhes dos pontos</button>
-                          <div class="detalhes-pontos-partida mt-3 pt-3 border-t border-gray-200 hidden">
-                              <h4 class="font-bold text-gray-700 mb-2">Sequência de Pontos:</h4>
-                              <ul class="list-disc list-inside text-sm space-y-1"></ul>
-                          </div>
-                      `;
-                      
-                      // Adiciona listener para expandir/colapsar os detalhes dos pontos
-                      const toggleButton = li.querySelector('.toggle-detalhes');
-                      const detalhesDiv = li.querySelector('.detalhes-pontos-partida');
-                      const ulDetalhes = detalhesDiv.querySelector('ul');
-
-                      toggleButton.addEventListener('click', () => {
-                          detalhesDiv.classList.toggle('hidden');
-                          if (!detalhesDiv.classList.contains('hidden')) {
-                              toggleButton.textContent = "Ocultar detalhes dos pontos";
-                              // Renderiza os pontos detalhados APENAS quando a div é expandida
-                              ulDetalhes.innerHTML = (partida.detalhesPontos || []).map(ponto => {
-                                  const corTimeA = (ponto.time === 'A') ? 'text-green-600' : 'text-gray-700';
-                                  const corTimeB = (ponto.time === 'B') ? 'text-blue-600' : 'text-gray-700';
-                                  const corVencedorPonto = (ponto.time === 'A') ? 'text-green-700' : 'text-blue-700';
-                                  
-                                  let descricaoPonto;
-                                  if (ponto.tipo === 'ponto_avulso') {
-                                      descricaoPonto = `Ponto Time ${ponto.time}`;
-                                  } else {
-                                      descricaoPonto = `Ponto ${ponto.jogador}`;
-                                  }
-
-                                  return `
-                                    <li>
-                                        <span class="font-bold ${corTimeA}">${ponto.placarA}</span> x <span class="font-bold ${corTimeB}">${ponto.placarB}</span> - <span class="${corVencedorPonto}">${descricaoPonto}</span>
-                                    </li>
-                                  `;
-                              }).join('');
-                              if ((partida.detalhesPontos || []).length === 0) {
-                                  ulDetalhes.innerHTML = '<li class="text-gray-500">Nenhum detalhe de ponto disponível.</li>';
-                               }
-                          } else {
-                              toggleButton.textContent = "Ver detalhes dos pontos";
-                          }
-                      });
-                      listaHistoricoEl.appendChild(li);
-                  });
-              }
-              console.log("Histórico de partidas atualizado.");
-          }, (error) => {
-              console.error("Erro ao escutar histórico:", error);
-              document.getElementById('visualizarHistorico').innerHTML = '<li class="text-red-500 py-2">Erro ao carregar histórico.</li>';
-          });
-
-          // Funções para Ranking e Destaques no VISUALIZADOR
-          function atualizarRankingVisualizador() {
-            const todosJogadores = Object.keys(jogadoresStatsLocal);
-            const rankingArray = Array.from(todosJogadores)
-                .map(nome => {
-                    const stats = jogadoresStatsLocal[nome] || { pontos: 0, vitorias: 0, derrotas: 0 };
-                    const score = (stats.vitorias * 3) + stats.pontos;
-                    return { nome: nome, stats: stats, score: score };
-                })
-                .filter(entry => entry.stats.pontos > 0 || entry.stats.vitorias > 0 || entry.stats.derrotas > 0)
-                .sort((a, b) => {
-                    if (b.score !== a.score) {
-                        return b.score - a.score;
-                    }
-                    if (b.stats.vitorias !== a.stats.vitorias) {
-                        return b.stats.vitorias - a.stats.vitorias;
-                    }
-                    if (b.stats.pontos !== a.stats.pontos) {
-                        return b.stats.pontos - a.stats.pontos;
-                    }
-                    return a.stats.derrotas - b.stats.derrotas;
-                });
-
-            const rankingHTML = rankingArray.map((entry, index) => {
-                const stats = entry.stats;
-                return `
-                    <li class="flex items-center py-2 border-b border-gray-200 last:border-b-0">
-                        <span class="ranking-pos font-bold text-blue-600 w-8 text-center">${index + 1}º</span>
-                        <span class="ranking-nome flex-1 text-gray-700">${entry.nome}</span>
-                        <span class="ranking-score font-bold text-purple-600 w-16 text-right">${entry.score}</span> 
-                        <span class="ranking-vitorias font-bold text-blue-600 w-16 text-right">${stats.vitorias} V</span> 
-                        <span class="ranking-pontos font-bold text-green-600 w-16 text-right">${stats.pontos} pts</span> 
-                        <span class="ranking-derrotas font-bold text-red-600 w-16 text-right">${stats.derrotas} D</span> 
-                    </li>
-                `;
-            }).join('');
-
-            document.getElementById("visualizarRanking").innerHTML = rankingHTML || '<li class="text-center text-gray-500 py-4">Nenhum ponto ou partida registrada ainda</li>';
-          }
-
-          function atualizarDestaquesVisualizador() {
-            const todosJogadoresArray = Object.keys(jogadoresStatsLocal).map(nome => {
-                return {
-                    nome: nome,
-                    stats: jogadoresStatsLocal[nome],
-                    score: (jogadoresStatsLocal[nome].vitorias * 3) + jogadoresStatsLocal[nome].pontos,
-                    isEstrela: estrelasRegistradasLocal.includes(nome) // Usa a variável local
-                };
-            }).filter(player => player.stats.pontos > 0 || player.stats.vitorias > 0 || player.stats.derrotas > 0);
-
-            const jogadoresGerais = todosJogadoresArray.filter(player => !player.isEstrela);
-            const jogadoresEstrela = todosJogadoresArray.filter(player => player.isEstrela);
-
-            const getDestaqueVisualizador = (arr, type) => {
-                if (arr.length === 0) return { nomes: ['N/A'], valor: 'N/A' };
-
-                let valorDestaque;
-                if (type === 'derrotas') {
-                    valorDestaque = Infinity;
-                    arr.forEach(player => { if (player.stats.derrotas < valorDestaque) valorDestaque = player.stats.derrotas; });
-                } else {
-                    valorDestaque = -Infinity;
-                    arr.forEach(player => {
-                        if (type === 'score' && player.score > valorDestaque) valorDestaque = player.score;
-                        else if (type === 'pontos' && player.stats.pontos > valorDestaque) valorDestaque = player.stats.pontos;
-                        else if (type === 'vitorias' && player.stats.vitorias > valorDestaque) valorDestaque = player.stats.vitorias;
-                    });
-                }
-
-                const destaquesEncontrados = arr.filter(player => {
-                    if (type === 'score') return player.score === valorDestaque;
-                    if (type === 'pontos') return player.stats.pontos === valorDestaque;
-                    if (type === 'vitorias') return player.stats.vitorias === valorDestaque;
-                    if (type === 'derrotas') return player.stats.derrotas === valorDestaque;
-                    return false;
-                });
-                const nomesDestaque = destaquesEncontrados.map(player => player.nome);
-                return { nomes: nomesDestaque.length > 0 ? nomesDestaque : ['N/A'], valor: valorDestaque !== -Infinity && valorDestaque !== Infinity ? valorDestaque : 'N/A' };
-            };
-
-            const geralMelhorScore = getDestaqueVisualizador(jogadoresGerais, 'score');
-            const geralMaisPontos = getDestaqueVisualizador(jogadoresGerais, 'pontos');
-            const geralMaisVitorias = getDestaqueVisualizador(jogadoresGerais, 'vitorias');
-            const geralMenosDerrotas = getDestaqueVisualizador(jogadoresGerais, 'derrotas');
-
-            document.getElementById('destaqueGeralScoreVisualizador').innerText = `${geralMelhorScore.nomes.join(', ')} (${geralMelhorScore.valor})`;
-            document.getElementById('destaqueGeralPontosVisualizador').innerText = `${geralMaisPontos.nomes.join(', ')} (${geralMaisPontos.valor})`;
-            document.getElementById('destaqueGeralVitoriasVisualizador').innerText = `${geralMaisVitorias.nomes.join(', ')} (${geralMaisVitorias.valor})`;
-            document.getElementById('destaqueGeralDerrotasVisualizador').innerText = `${geralMenosDerrotas.nomes.join(', ')} (${geralMenosDerrotas.valor})`;
-
-            const estrelaMelhorScore = getDestaqueVisualizador(jogadoresEstrela, 'score');
-            const estrelaMaisPontos = getDestaqueVisualizador(jogadoresEstrela, 'pontos');
-            const estrelaMaisVitorias = getDestaqueVisualizador(jogadoresEstrela, 'vitorias');
-            const estrelaMenosDerrotas = getDestaqueVisualizador(jogadoresEstrela, 'derrotas');
-
-            document.getElementById('destaqueEstrelaScoreVisualizador').innerText = `${estrelaMelhorScore.nomes.join(', ')} (${estrelaMelhorScore.valor})`;
-            document.getElementById('destaqueEstrelaPontosVisualizador').innerText = `${estrelaMaisPontos.nomes.join(', ')} (${estrelaMaisPontos.valor})`;
-            document.getElementById('destaqueEstrelaVitoriasVisualizador').innerText = `${estrelaMaisVitorias.nomes.join(', ')} (${estrelaMaisVitorias.valor})`;
-            document.getElementById('destaqueEstrelaDerrotasVisualizador').innerText = `${estrelaMenosDerrotas.nomes.join(', ')} (${estrelaMenosDerrotas.valor})`;
-          }
+          // Removido listener do Histórico de Partidas, Ranking e Destaques pois não serão exibidos nesta versão.
       });
     </script>
 </head>
@@ -455,17 +300,7 @@
         <div id="ultimoPontoBalao" class="mt-6 p-3 bg-indigo-500 text-white font-bold text-xl rounded-lg shadow-md hidden animate-fade-in-out">
             </div>
 
-        <div class="historico-pontos-partida mt-6 text-left border-t border-gray-200 pt-4">
-            <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">Histórico de Pontos da Partida</h3>
-            <div class="flex justify-between font-semibold text-gray-600 mb-2 px-2">
-                <span>TIME A</span>
-                <span>TIME B</span>
-            </div>
-            <ul id="listaHistoricoPontos" class="space-y-1">
-                </ul>
         </div>
 
-    </div>
-
-</body>
+    </body>
 </html>
