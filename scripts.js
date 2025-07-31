@@ -1523,45 +1523,41 @@ async function redefinirTudo() {
         location.reload(); 
     }
 }
-// Adicione esta função ao scripts.js
 function setupSortableLists() {
-    new Sortable(document.getElementById('filaGeral'), {
-        animation: 150,
-        handle: '.drag-handle', // Manipulador de arrastar
-        onEnd: function (evt) {
-            // Esta função é chamada quando uma operação de arrastar e soltar termina.
-            // Você precisará atualizar seu array filaGeral com base na nova ordem.
-            // Em seguida, salve o estado e atualize a exibição.
-            const itemEl = evt.item;  // HTMLElement arrastado
-            const oldIndex = evt.oldIndex;
-            const newIndex = evt.newIndex;
-
-            // Realiza a movimentação no array real
-            const [movedItem] = filaGeral.splice(oldIndex, 1);
-            filaGeral.splice(newIndex, 0, movedItem);
-
-            localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
-            salvarEstadoDoJogoNoFirestore(); // Salva no Firestore se integrado
-            atualizarTela(); // Renderiza novamente as listas para refletir as mudanças
+    const setupSortable = (ulElement, filaArray) => {
+        if (ulElement.sortableInstance) {
+            ulElement.sortableInstance.destroy();
         }
-    });
+        ulElement.sortableInstance = new Sortable(ulElement, {
+            animation: 150,
+            handle: '.drag-handle',
+            onMove: function (evt) {
+                if (evt.to !== ulElement) {
+                    return !evt.dragged.classList.contains('locked');
+                }
+                return true;
+            },
+            onEnd: function (evt) {
+                salvarEstadoAtual(); // Salva o estado ANTES da mudança do array
+                const [movedItem] = filaArray.splice(evt.oldIndex, 1);
+                filaArray.splice(evt.newIndex, 0, movedItem);
 
-    new Sortable(document.getElementById('filaEstrela'), {
-        animation: 150,
-        handle: '.drag-handle', // Manipulador de arrastar
-        onEnd: function (evt) {
-            const itemEl = evt.item;
-            const oldIndex = evt.oldIndex;
-            const newIndex = evt.newIndex;
+                // NOVO: Salvar as filas explicitamente após a reordenação
+                if (ulElement.id === 'filaGeral') {
+                    localStorage.setItem('filaGeral', JSON.stringify(filaGeral));
+                } else if (ulElement.id === 'filaEstrela') {
+                    localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
+                }
+                
+                // NOVO: Salvar o estado do jogo no Firestore após a reordenação
+                salvarEstadoDoJogoNoFirestore(); 
 
-            const [movedItem] = filaEstrela.splice(oldIndex, 1);
-            filaEstrela.splice(newIndex, 0, movedItem);
-
-            localStorage.setItem('filaEstrela', JSON.stringify(filaEstrela));
-            salvarEstadoDoJogoNoFirestore(); // Salva no Firestore se integrado
-            atualizarTela();
-        }
-    });
+                atualizarTela(); // Renderiza a tela com a nova ordem
+            }
+        });
+    };
+    setupSortable(document.getElementById('filaGeral'), filaGeral);
+    setupSortable(document.getElementById('filaEstrela'), filaEstrela);
 }
 function salvarEstadoDoJogoNoFirestore(ultimoMarcador = null, timeUltimoMarcador = null, tipoPonto = 'ponto_normal') {
     if (!window.db) { 
@@ -1659,7 +1655,7 @@ window.onclick = function(event) {
     }
 }
 
-/*document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     let lastTouchY = 0; 
     let isPulling = false; 
 
@@ -1685,4 +1681,4 @@ window.onclick = function(event) {
     document.body.addEventListener('touchend', () => {
         isPulling = false;
     });
-});*/
+});
