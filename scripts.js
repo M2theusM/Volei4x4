@@ -1659,7 +1659,7 @@ window.onclick = function(event) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+/*document.addEventListener('DOMContentLoaded', () => {
     let lastTouchY = 0; 
     let isPulling = false; 
 
@@ -1685,4 +1685,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('touchend', () => {
         isPulling = false;
     });
-});
+});*/
